@@ -2,9 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({});
 
-// A `main` function so that you can use async/await
 async function main() {
-  // Create first user with three posts
   const user1 = await prisma.user.create({
     data: {
       email: 'ariadne@prisma.io',
@@ -30,7 +28,6 @@ async function main() {
     },
   });
 
-  // Create second user with three posts
   const user2 = await prisma.user.create({
     data: {
       email: 'bob@prisma.io',
@@ -56,7 +53,6 @@ async function main() {
     },
   });
 
-  // Return users and their posts
   const returnUsers = await prisma.user.findMany({
     include: {
       posts: true,
