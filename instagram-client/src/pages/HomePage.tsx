@@ -5,6 +5,7 @@ import CreatePost from "../components/CreatePost";
 import ApiService from "../../services/apiServices";
 import { Post } from "../types/post";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 const HomePage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -59,22 +60,26 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
-      {posts.map((post, index) => (
-        <div
-          key={post.id}
-          ref={index === posts.length - 1 ? lastPostRef : undefined}
-        >
-          <PostCard post={post} />
-        </div>
-      ))}
-      {loading && (
-        <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress />
-        </Box>
-      )}
-    </Container>
+    <>
+      <Navbar />
+
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
+        {posts.map((post, index) => (
+          <div
+            key={post.id}
+            ref={index === posts.length - 1 ? lastPostRef : undefined}
+          >
+            <PostCard post={post} />
+          </div>
+        ))}
+        {loading && (
+          <Box display="flex" justifyContent="center" my={4}>
+            <CircularProgress />
+          </Box>
+        )}
+      </Container>
+    </>
   );
 };
 
