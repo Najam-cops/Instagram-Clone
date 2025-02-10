@@ -21,6 +21,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
+    "react-material-ui-carousel": "^3.4.2",
     "react-router": "^7.1.5",
     "tailwindcss": "^4.0.4",
     "zod": "^3.24.1"

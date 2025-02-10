@@ -1,4 +1,24 @@
 import { makeRequest } from "../utils/ApiCall";
+import { POSTS_API_URL } from "./apiEndpoints";
+
+interface PostsResponse {
+  posts: Post[];
+  nextCursor: string | null;
+}
+
+interface Post {
+  id: string;
+  description: string;
+  images: { url: string }[];
+  user: {
+    id: string;
+    username: string;
+    profileImage: string | null;
+  };
+  _count: {
+    Likes: number;
+  };
+}
 
 class ApiService {
   async login(email: string, password: string): Promise<any> {
@@ -17,6 +37,21 @@ class ApiService {
     const isPrivateApi = false;
 
     return await makeRequest(url, method, data, isPrivateApi);
+  }
+
+  async getPosts(cursor?: string, take: number = 10): Promise<PostsResponse> {
+    const url = `${POSTS_API_URL}?${
+      cursor ? `cursor=${cursor}&` : ""
+    }take=${take}`;
+    return await makeRequest(url, "GET", null, true);
+  }
+
+  async createPost(description: string, files: File[]): Promise<Post> {
+    const formData = new FormData();
+    formData.append("description", description);
+    files.forEach((file) => formData.append("files", file));
+
+    return await makeRequest(POSTS_API_URL, "POST", formData, true);
   }
 }
 
