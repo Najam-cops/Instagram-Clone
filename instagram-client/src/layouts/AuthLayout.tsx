@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const AuthLayout: React.FC = () => {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) {
-    return <Navigate to="/home" />;
+    return <Navigate to="/" />;
   }
   return (
     <div>

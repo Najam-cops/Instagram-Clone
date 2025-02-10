@@ -1,5 +1,5 @@
 import { makeRequest } from "../utils/ApiCall";
-import { POSTS_API_URL } from "./apiEndpoints";
+import { POSTS_API_URL, SIGNUP_API_URL, LOGOUT_API_URL } from "./apiEndpoints";
 
 interface PostsResponse {
   posts: Post[];
@@ -20,6 +20,13 @@ interface Post {
   };
 }
 
+interface SignUpData {
+  username: string;
+  password: string;
+  email: string;
+  name: string;
+}
+
 class ApiService {
   async login(email: string, password: string): Promise<any> {
     const url = "/auth/login";
@@ -30,13 +37,11 @@ class ApiService {
     return await makeRequest(url, method, data, isPrivateApi);
   }
 
-  async signup(username: string, password: string): Promise<any> {
-    const url = "/auth/signup";
+  async signup(data: SignUpData): Promise<any> {
     const method = "POST";
-    const data = { username, password };
     const isPrivateApi = false;
 
-    return await makeRequest(url, method, data, isPrivateApi);
+    return await makeRequest(SIGNUP_API_URL, method, data, isPrivateApi);
   }
 
   async getPosts(cursor?: string, take: number = 10): Promise<PostsResponse> {
@@ -52,6 +57,10 @@ class ApiService {
     files.forEach((file) => formData.append("files", file));
 
     return await makeRequest(POSTS_API_URL, "POST", formData, true);
+  }
+
+  async logout(): Promise<any> {
+    return await makeRequest(LOGOUT_API_URL, "POST", null, true);
   }
 }
 
