@@ -7,12 +7,14 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthEntity } from './entity/auth.entity';
 import { Prisma } from '@prisma/client';
+import { HashingService } from './hashing/hashing.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private hashingService: HashingService,
   ) {}
 
   async login(email: string, password: string): Promise<AuthEntity> {
@@ -24,10 +26,13 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const isPasswordValid = user.password === password;
+    const isPasswordValid = await this.hashingService.comparePassword(
+      password,
+      user.password,
+    );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException('Password or Email is not valid');
     }
 
     const userData = await this.prisma.user.findUnique({
@@ -50,10 +55,22 @@ export class AuthService {
   }
 
   async signup(createUserDto: Prisma.UserCreateInput): Promise<AuthEntity> {
+    //check if user already exists
+    const userExists = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email },
+    });
+
+    if (userExists) {
+      throw new UnauthorizedException('User already exists');
+    }
+
+    const hashedPassword = await this.hashingService.hashPassword(
+      createUserDto.password,
+    );
     const user = await this.prisma.user.create({
       data: {
         email: createUserDto.email,
-        password: createUserDto.password,
+        password: hashedPassword,
         username: createUserDto.username,
         name: createUserDto.name,
       },
