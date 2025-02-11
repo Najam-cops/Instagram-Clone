@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
 import { ConfigModule } from '@nestjs/config';
 import { FollowsModule } from './follows/follows.module';
+import { LikesModule } from './likes/likes.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { FollowsModule } from './follows/follows.module';
     UploadModule,
     ConfigModule.forRoot({ isGlobal: true }),
     FollowsModule,
+    LikesModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
