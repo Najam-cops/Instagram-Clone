@@ -23,12 +23,59 @@ model User {
   username  String   @unique
   password  String
   token     String?
-  verified  Boolean  @default(false)
+  isPrivate  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   posts     Post[]
   Likes     PostLike[]
+  comments  PostComment[]
+  followers Follows[] @relation("followers")
+  following Follows[] @relation("following")
+  requested FollowRequests[] @relation("requested")
+  requester FollowRequests[] @relation("requester")
+  blockedUsers Blocks[] @relation("blockedUsers")
+  blcokedByUsers Blocks[] @relation("blockedByUsers")
   @@index([email, username])
+}
+
+model Follows {
+  id        String   @id @default(cuid())
+  follower      User     @relation("followers",fields: [followerId], references: [id])
+  followerId    String
+  following  User     @relation("following",fields: [followingId], references: [id])
+  followingId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@index([followerId])
+}
+
+model FollowRequests {
+  id        String   @id @default(cuid())
+  requester   User     @relation("requester",fields: [requesterId], references: [id])
+  requesterId String
+  requested   User     @relation("requested",fields: [requestedId], references: [id])
+  requestedId String
+  requestStatus RequestStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([requesterId, requestedId])
+  @@index([requesterId])
+  @@index([requestedId])
+}
+
+model Blocks {
+  id        String   @id @default(cuid())
+  blocker   User     @relation("blockedUsers",fields: [blockerId], references: [id])
+  blockerId String
+  blockedBy  User     @relation("blockedByUsers",fields: [blockedById], references: [id])
+  blockedById String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([blockerId, blockedById])
+  @@index([blockerId])
+  @@index([blockedById])
 }
 
 model Post {
@@ -37,7 +84,8 @@ model Post {
   images      PostImage[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Likes      PostLike[]
+  Likes      PostLike[] @relation("likes")
+  comments   PostComment[] @relation("comments")
   user    User     @relation(fields: [userId], references: [id])
   userId  String
   @@index([userId])
@@ -55,7 +103,20 @@ model PostImage {
 
 model PostLike {
   id        String   @id @default(cuid())
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation("likes",fields: [postId], references: [id])
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  comment   String
+  post      Post     @relation("comments",fields: [postId], references: [id])
   postId    String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
@@ -72,4 +133,10 @@ model TokenBlacklist {
   updatedAt DateTime @updatedAt
 
   @@index([token])
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
