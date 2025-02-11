@@ -1,5 +1,11 @@
 import { makeRequest } from "../utils/ApiCall";
-import { POSTS_API_URL, SIGNUP_API_URL, LOGOUT_API_URL } from "./apiEndpoints";
+import {
+  POSTS_API_URL,
+  SIGNUP_API_URL,
+  LOGOUT_API_URL,
+  USERS_API_URL,
+  FOLLOWS_API_URL,
+} from "./apiEndpoints";
 
 interface PostsResponse {
   posts: Post[];
@@ -61,6 +67,69 @@ class ApiService {
 
   async logout(): Promise<any> {
     return await makeRequest(LOGOUT_API_URL, "POST", null, true);
+  }
+
+  // User related methods
+  async getUserDetails(userId: string): Promise<any> {
+    return await makeRequest(`${USERS_API_URL}/${userId}`, "GET", null, true);
+  }
+
+  async getUserRequests(userId: string): Promise<any> {
+    return await makeRequest(
+      `${USERS_API_URL}/${userId}/requests`,
+      "GET",
+      null,
+      true
+    );
+  }
+
+  async getUserFollowers(userId: string): Promise<any> {
+    return await makeRequest(
+      `${USERS_API_URL}/${userId}/followers`,
+      "GET",
+      null,
+      true
+    );
+  }
+
+  async getUserFollowing(userId: string): Promise<any> {
+    return await makeRequest(
+      `${USERS_API_URL}/${userId}/following`,
+      "GET",
+      null,
+      true
+    );
+  }
+
+  async acceptFollowRequest(requestId: string): Promise<any> {
+    return await makeRequest(
+      `${FOLLOWS_API_URL}/accept/${requestId}`,
+      "POST",
+      null,
+      true
+    );
+  }
+
+  async rejectFollowRequest(requestId: string): Promise<any> {
+    return await makeRequest(
+      `${FOLLOWS_API_URL}/reject/${requestId}`,
+      "POST",
+      null,
+      true
+    );
+  }
+
+  async deleteFollowRequest(requestId: string): Promise<any> {
+    return await makeRequest(
+      `${FOLLOWS_API_URL}/request/${requestId}`,
+      "DELETE",
+      null,
+      true
+    );
+  }
+
+  async getCurrentUser(): Promise<any> {
+    return await makeRequest(`${USERS_API_URL}/me`, "GET", null, true);
   }
 }
 

@@ -3,8 +3,8 @@ import SignInPage from "./pages/SignInPage";
 import AuthLayout from "./layouts/AuthLayout";
 import HomePage from "./pages/HomePage";
 import ProtectedLayout from "./layouts/ProtectedLayout";
-import ProtectedPage from "./pages/ProtectedPage";
 import SignupPage from "./pages/SignupPage";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -13,7 +13,8 @@ function App() {
         <Route index element={<HomePage />} />
 
         <Route element={<ProtectedLayout />}>
-          <Route path="home" element={<ProtectedPage />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="profile/:id" element={<Profile />} />
         </Route>
 
         <Route element={<AuthLayout />}>

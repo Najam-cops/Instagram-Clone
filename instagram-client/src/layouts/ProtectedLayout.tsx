@@ -4,9 +4,10 @@ import { useAuth } from "../context/AuthContext";
 
 const ProtectedLayout: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to="/signin" />;
-  }
+  console.log(isAuthenticated);
+  // if (!isAuthenticated) {
+  //   return <Navigate to="/signin" />;
+  // }
   return (
     <div>
       <Outlet />

@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-// import { CreateUserDto } from './dto/create-user.dto';
-// import { UpdateUserDto } from './dto/update-user.dto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -33,6 +31,61 @@ export class UsersService {
   remove(id: string) {
     return this.prisma.user.delete({
       where: { id },
+    });
+  }
+
+  async getFollowRequests(userId: string) {
+    return this.prisma.followRequests.findMany({
+      where: {
+        requestedId: userId,
+        requestStatus: 'PENDING',
+      },
+      include: {
+        requester: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getFollowers(userId: string) {
+    return this.prisma.follows.findMany({
+      where: {
+        followingId: userId,
+      },
+      include: {
+        follower: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getFollowing(userId: string) {
+    return this.prisma.follows.findMany({
+      where: {
+        followerId: userId,
+      },
+      include: {
+        following: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
     });
   }
 }
