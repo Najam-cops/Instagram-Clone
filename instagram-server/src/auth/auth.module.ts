@@ -21,6 +21,5 @@ export const jwtSecret = 'zjP9h6ZI5LoSKCRj';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
 })
 export class AuthModule {}

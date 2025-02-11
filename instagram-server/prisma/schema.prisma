@@ -64,3 +64,12 @@ model PostLike {
   @@index([postId])
   @@index([userId])
 }
+
+model TokenBlacklist {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token])
+}

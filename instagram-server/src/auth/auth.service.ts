@@ -77,4 +77,26 @@ export class AuthService {
       accessToken: this.jwtService.sign({ sub: user.id }),
     };
   }
+
+  async logout(req: any) {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader.split(' ')[1];
+      // console.log('token', token);
+      // console.log('authHeader', authHeader);
+      if (token) {
+        const invalid = await this.prisma.tokenBlacklist.create({
+          data: {
+            token,
+          },
+        });
+        console.log('invalid', invalid);
+
+        return { message: 'Logged out' };
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+      throw new UnauthorizedException('Logout failed');
+    }
+  }
 }

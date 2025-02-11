@@ -22,12 +22,14 @@ import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UploadService } from 'src/upload/upload.service';
 import { Request } from 'express';
+import { JwtBlacklistGuard } from 'src/guards/BlackListToken';
 
 interface RequestWithUser extends Request {
   user: User;
 }
 
 @Controller('posts')
+@UseGuards(JwtBlacklistGuard)
 export class PostsController {
   constructor(
     private readonly postsService: PostsService,
