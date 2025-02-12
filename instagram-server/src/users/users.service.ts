@@ -34,7 +34,50 @@ export class UsersService {
     });
   }
 
-  async getFollowRequests(userId: string) {
+  async isFollower(followerId: string, followingId: string) {
+    const follow = await this.prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followingId,
+          followerId,
+        },
+      },
+    });
+    return !!follow;
+  }
+
+  async isFollowing(followerId: string, followingId: string) {
+    const follow = await this.prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    return !!follow;
+  }
+
+  async isBlocked(blockerId: string, blockedById: string) {
+    const block = await this.prisma.blocks.findUnique({
+      where: {
+        blockerId_blockedById: {
+          blockerId,
+          blockedById,
+        },
+      },
+    });
+    return !!block;
+  }
+
+  async getFollowRequests(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+    const isFollowing = await this.isFollowing(requesterId, userId);
+
+    if (user?.isPrivate && !isFollowing && userId !== requesterId) {
+      return [];
+    }
+
     return this.prisma.followRequests.findMany({
       where: {
         requestedId: userId,
@@ -53,7 +96,14 @@ export class UsersService {
     });
   }
 
-  async getFollowers(userId: string) {
+  async getFollowers(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+    const isFollowing = await this.isFollowing(requesterId, userId);
+
+    if (user?.isPrivate && !isFollowing && userId !== requesterId) {
+      return [];
+    }
+
     return this.prisma.follows.findMany({
       where: {
         followingId: userId,
@@ -71,7 +121,14 @@ export class UsersService {
     });
   }
 
-  async getFollowing(userId: string) {
+  async getFollowing(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+    const isFollowing = await this.isFollowing(requesterId, userId);
+
+    if (user?.isPrivate && !isFollowing && userId !== requesterId) {
+      return [];
+    }
+
     return this.prisma.follows.findMany({
       where: {
         followerId: userId,

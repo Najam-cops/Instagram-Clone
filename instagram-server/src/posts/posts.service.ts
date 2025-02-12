@@ -45,17 +45,43 @@ export class PostsService {
   }
 
   async findAll(params: {
+    userId: string;
     take?: number;
     cursor?: string;
     orderBy?: Prisma.PostOrderByWithRelationInput;
   }) {
-    const { take = 10, cursor, orderBy = { createdAt: 'desc' } } = params;
+    const {
+      userId,
+      take = 10,
+      cursor,
+      orderBy = { createdAt: 'desc' },
+    } = params;
 
     const posts = await this.prisma.post.findMany({
       take,
       skip: cursor ? 1 : 0, // Skip the cursor if we have one
       cursor: cursor ? { id: cursor } : undefined,
       orderBy,
+      where: {
+        user: {
+          AND: [
+            {
+              blcokedByUsers: {
+                none: {
+                  blockerId: userId,
+                },
+              },
+            },
+            {
+              blockedUsers: {
+                none: {
+                  blockedById: userId,
+                },
+              },
+            },
+          ],
+        },
+      },
       include: {
         images: true,
         user: {
@@ -73,8 +99,11 @@ export class PostsService {
       },
     });
 
-    const lastPostInResults = posts[posts.length - 1];
-    const nextCursor = lastPostInResults?.id;
+    let nextCursor: string | undefined;
+    if (posts && posts.length > 0) {
+      const lastPostInResults = posts[posts.length - 1];
+      nextCursor = lastPostInResults?.id;
+    }
 
     return {
       posts,

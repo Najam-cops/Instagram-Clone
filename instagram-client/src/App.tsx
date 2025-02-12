@@ -5,14 +5,16 @@ import HomePage from "./pages/HomePage";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import SignupPage from "./pages/SignupPage";
 import Profile from "./pages/Profile";
+import WelcomePage from "./pages/WelcomePage";
 
 function App() {
   return (
     <>
       <Routes>
-        <Route index element={<HomePage />} />
+        <Route index element={<WelcomePage />} />
 
         <Route element={<ProtectedLayout />}>
+          <Route path="timeline" element={<HomePage />} />
           <Route path="profile" element={<Profile />} />
           <Route path="profile/:id" element={<Profile />} />
         </Route>

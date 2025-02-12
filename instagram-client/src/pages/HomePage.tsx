@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { Container, CircularProgress, Box } from "@mui/material";
 import PostCard from "../components/PostCard";
 import CreatePost from "../components/CreatePost";
@@ -10,22 +10,13 @@ import Navbar from "../components/Navbar";
 const HomePage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const observer = useRef<IntersectionObserver | null>(null);
   const { isAuthenticated } = useAuth();
 
-  // console.log(posts, loading, cursor, hasMore);
-
-  const loadPosts = async (cursorValue?: string) => {
+  const loadPosts = async () => {
     try {
       setLoading(true);
-      const response = await ApiService.getPosts(cursorValue);
-      setPosts((prev) =>
-        cursorValue ? [...prev, ...response.posts] : response.posts
-      );
-      setCursor(response.nextCursor);
-      setHasMore(!!response.nextCursor);
+      const response = await ApiService.getPosts();
+      setPosts(response.posts);
     } catch (error) {
       console.error("Failed to fetch posts:", error);
     } finally {
@@ -35,25 +26,8 @@ const HomePage: React.FC = () => {
 
   const refreshPosts = () => {
     setPosts([]);
-    setCursor(null);
     loadPosts();
   };
-
-  const lastPostRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          loadPosts(cursor!);
-        }
-      });
-
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore, cursor]
-  );
 
   useEffect(() => {
     loadPosts();
@@ -62,14 +36,10 @@ const HomePage: React.FC = () => {
   return (
     <>
       <Navbar />
-
       <Container maxWidth="md" sx={{ py: 4 }}>
         {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
-        {posts.map((post, index) => (
-          <div
-            key={post.id}
-            ref={index === posts.length - 1 ? lastPostRef : undefined}
-          >
+        {posts.map((post) => (
+          <div key={post.id}>
             <PostCard post={post} />
           </div>
         ))}

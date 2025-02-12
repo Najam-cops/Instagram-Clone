@@ -5,6 +5,8 @@ import {
   LOGOUT_API_URL,
   USERS_API_URL,
   FOLLOWS_API_URL,
+  BLOCK_USER,
+  UNBLOCK_USER,
 } from "./apiEndpoints";
 
 interface PostsResponse {
@@ -142,6 +144,31 @@ class ApiService {
 
   async getCurrentUser(): Promise<any> {
     return await makeRequest(`${USERS_API_URL}/me`, "GET", null, true);
+  }
+  async followUser(userId: string): Promise<any> {
+    return await makeRequest(
+      `${FOLLOWS_API_URL}?userId=${userId}`,
+      "POST",
+      null,
+      true
+    );
+  }
+
+  async blockUser(userId: string): Promise<any> {
+    return await makeRequest(`${BLOCK_USER}${userId}`, "POST", null, true);
+  }
+
+  async unblockUser(userId: string): Promise<any> {
+    return await makeRequest(`${UNBLOCK_USER}${userId}`, "DELETE", null, true);
+  }
+
+  async unfollowUser(userId: string): Promise<any> {
+    return await makeRequest(
+      `${FOLLOWS_API_URL}/${userId}`,
+      "DELETE",
+      null,
+      true
+    );
   }
 }
 

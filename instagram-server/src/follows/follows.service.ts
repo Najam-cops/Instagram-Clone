@@ -62,6 +62,7 @@ export class FollowsService {
           requesterId: followerId,
           requestedId: userId,
         },
+        requestStatus: 'PENDING',
       },
     });
 
@@ -83,6 +84,54 @@ export class FollowsService {
       data: {
         followerId: followerId,
         followingId: userId,
+      },
+    });
+  }
+
+  async unfollow(userId: string, req: { user: RequestUser }) {
+    const followerId = req.user.id;
+
+    if (followerId === userId) {
+      throw new BadRequestException('You cannot unfollow yourself');
+    }
+
+    const follow = await this.prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: followerId,
+          followingId: userId,
+        },
+      },
+    });
+
+    if (!follow) {
+      throw new BadRequestException('You are not following this user');
+    }
+
+    return this.prisma.follows.delete({
+      where: {
+        followerId_followingId: {
+          followerId: followerId,
+          followingId: userId,
+        },
+      },
+    });
+  }
+
+  async unfollowBoth(userId1: string, userId2: string) {
+    // Remove follows in both directions if they exist
+    await this.prisma.follows.deleteMany({
+      where: {
+        OR: [
+          {
+            followerId: userId1,
+            followingId: userId2,
+          },
+          {
+            followerId: userId2,
+            followingId: userId1,
+          },
+        ],
       },
     });
   }

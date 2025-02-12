@@ -33,9 +33,8 @@ export class RequestsService {
         followingId: request.requestedId,
       },
     });
-    return this.prisma.followRequests.update({
+    return this.prisma.followRequests.delete({
       where: { id: requestId },
-      data: { requestStatus: 'ACCEPTED' },
     });
   }
 
@@ -52,9 +51,8 @@ export class RequestsService {
       throw new UnauthorizedException('Not authorized to reject this request');
     }
 
-    return this.prisma.followRequests.update({
+    return this.prisma.followRequests.delete({
       where: { id: requestId },
-      data: { requestStatus: 'REJECTED' },
     });
   }
 

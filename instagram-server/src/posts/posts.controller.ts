@@ -55,12 +55,17 @@ export class PostsController {
   ) {
     return this.postsService.create(createPostDto, files, req.user.id);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiQuery({ name: 'cursor', required: false })
   @ApiQuery({ name: 'take', required: false })
-  findAll(@Query('cursor') cursor?: string, @Query('take') take?: string) {
+  findAll(
+    @Req() req: RequestWithUser,
+    @Query('cursor') cursor?: string,
+    @Query('take') take?: string,
+  ) {
     return this.postsService.findAll({
+      userId: req.user.id,
       cursor,
       take: take ? parseInt(take, 10) : undefined,
     });

@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Req,
   UseGuards,
   UseInterceptors,
@@ -46,23 +45,43 @@ export class UsersController {
   }
 
   @Get(':id/requests')
-  getFollowRequests(@Param('id') id: string) {
-    return this.usersService.getFollowRequests(id);
+  @UseGuards(JwtAuthGuard)
+  getFollowRequests(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.usersService.getFollowRequests(id, req.user.id);
   }
 
   @Get(':id/followers')
-  getFollowers(@Param('id') id: string) {
-    return this.usersService.getFollowers(id);
+  @UseGuards(JwtAuthGuard)
+  getFollowers(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.usersService.getFollowers(id, req.user.id);
   }
 
   @Get(':id/following')
-  getFollowing(@Param('id') id: string) {
-    return this.usersService.getFollowing(id);
+  @UseGuards(JwtAuthGuard)
+  getFollowing(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.usersService.getFollowing(id, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const user = await this.usersService.findOne(id);
+
+    if (req.user.id !== id) {
+      const isFollowing = await this.usersService.isFollowing(req.user.id, id);
+      const isFollower = await this.usersService.isFollower(req.user.id, id);
+      const isBlocked = await this.usersService.isBlocked(req.user.id, id);
+
+      return {
+        ...user,
+        isFollowing,
+        isFollower,
+        isBlocked,
+        isPrivateAndNotFollowing: user?.isPrivate && !isFollowing,
+      };
+    }
+
+    return user;
   }
 
   @Patch(':id')
@@ -72,7 +91,7 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getCurrentUser(@Req() req: any) {
+  getCurrentUser(@Req() req: RequestWithUser) {
     return this.usersService.findOne(req.user.id);
   }
 
@@ -103,7 +122,10 @@ export class UsersController {
       file.buffer,
     );
 
-    const profile = this.usersService.update(id, { profileImage: imageUrl });
+    const profile = await this.usersService.update(id, {
+      profileImage: imageUrl,
+    });
+    console.log(profile);
     return { message: 'Profile image uploaded successfully', sucess: true };
   }
 }

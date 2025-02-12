@@ -15,6 +15,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import ShareIcon from "@mui/icons-material/Share";
+import { useNavigate } from "react-router";
 
 interface PostCardProps {
   post: Post;
@@ -22,12 +23,12 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [liked, setLiked] = useState(false);
+  const navigate = useNavigate();
   const [likesCount, setLikesCount] = useState(post._count.Likes);
 
   const handleLikeClick = () => {
     setLiked(!liked);
     setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
-    console.log("Like clicked");
   };
 
   const handleCommentClick = () => {
@@ -37,6 +38,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   return (
     <Card className="max-w-[470px] mb-6 mx-auto border border-gray-200 rounded-lg shadow-none">
       <CardHeader
+        onClick={() => navigate(`/profile/${post.user.id}`)}
         className="px-4 py-3"
         avatar={
           <Avatar src={post.user.profileImage || undefined} className="w-8 h-8">
