@@ -128,6 +128,18 @@ class ApiService {
     );
   }
 
+  async changeProfileImage(file: File, userId: string): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return await makeRequest(
+      `${USERS_API_URL}/${userId}/profile-image`,
+      "POST",
+      formData,
+      true
+    );
+  }
+
   async getCurrentUser(): Promise<any> {
     return await makeRequest(`${USERS_API_URL}/me`, "GET", null, true);
   }

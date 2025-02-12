@@ -51,7 +51,7 @@ export class FollowsController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('request/:requestId')
+  @Delete('delete/:requestId')
   deleteRequest(
     @Param('requestId') requestId: string,
     @Req() req: { user: RequestUser },

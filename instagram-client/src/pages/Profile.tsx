@@ -1,78 +1,71 @@
 import { useParams, useNavigate } from "react-router";
 import { useUserDetails } from "../hooks/useUserDetails";
-import {
-  Avatar,
-  Button,
-  CircularProgress,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-} from "@mui/material";
-import { useState, useEffect } from "react";
-import { Check, Close, MoreVert } from "@mui/icons-material";
+import { useFollowRequests } from "../hooks/useFollowRequests";
+import { Avatar, Button, CircularProgress } from "@mui/material";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div role="tabpanel" hidden={value !== index} {...other} className="mt-4">
-      {value === index && children}
-    </div>
-  );
-}
+import FollowersDialog from "../components/profile/FollowersDialog";
+import FollowingDialog from "../components/profile/FollowingDialog";
+import RequestPopup from "../components/profile/RequestPopup";
+import apiServices from "../../services/apiServices";
 
 export default function Profile() {
   const { id } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoading: userLoading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
   const [openRequestsDialog, setOpenRequestsDialog] = useState(false);
   const [openFollowersDialog, setOpenFollowersDialog] = useState(false);
   const [openFollowingDialog, setOpenFollowingDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // If no ID is provided, use the current user's ID
   const profileId = id || currentUser?.id;
 
-  // Redirect to signin if no current user
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser && !userLoading) {
       navigate("/signin");
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, userLoading]);
 
-  const {
-    userDetails,
-    requests,
-    followers,
-    following,
-    loading,
-    error,
-    acceptRequest,
-    rejectRequest,
-    deleteRequest,
-  } = useUserDetails(profileId || "");
+  const { userDetails, requests, followers, following, loading, error } =
+    useUserDetails(profileId || "");
 
-  if (!currentUser) {
-    return null; // Don't render anything while redirecting
-  }
+  const { acceptRequest, rejectRequest, isAccepting, isRejecting } =
+    useFollowRequests(profileId || "");
 
-  if (loading) {
+  const handleImageClick = () => {
+    if (isOwnProfile) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      const response = await apiServices.changeProfileImage(
+        file,
+        currentUser.id
+      );
+
+      if (!response.sucess) {
+        throw new Error("Failed to upload image");
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+      alert("Failed to upload profile image. Please try again.");
+    }
+  };
+
+  if (!currentUser) return null;
+
+  if (loading || userLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center min-h-screen">
         <CircularProgress />
       </div>
     );
@@ -89,19 +82,40 @@ export default function Profile() {
   const isOwnProfile = currentUser.id === userDetails.id;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row items-start gap-8">
-        {/* Profile Header */}
-        <div className="flex-shrink-0">
-          <Avatar
-            src={userDetails.profileImage || undefined}
-            alt={userDetails.username}
-            sx={{ width: 150, height: 150 }}
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+        <div className="relative">
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileSelect}
           />
+          <div
+            className={`relative cursor-pointer ${
+              isOwnProfile ? "hover:opacity-90" : ""
+            }`}
+            onClick={handleImageClick}
+          >
+            <Avatar
+              src={userDetails.profileImage || undefined}
+              alt={userDetails.username}
+              sx={{
+                width: 150,
+                height: 150,
+              }}
+            />
+            {isOwnProfile && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity rounded-full">
+                <span className="text-white text-sm">Change photo</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex-grow">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="flex-grow space-y-4 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center gap-4">
             <h1 className="text-2xl font-bold">{userDetails.username}</h1>
             {isOwnProfile && (
               <Button variant="outlined" size="small">
@@ -110,188 +124,61 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="flex gap-6 mb-4">
+          <div className="flex justify-center md:justify-start gap-6">
             <button
               onClick={() => setOpenFollowersDialog(true)}
-              className="text-sm hover:underline"
+              className="hover:opacity-75 transition-opacity"
             >
-              <span className="font-bold">{followers.length}</span> followers
+              <span className="font-bold">{followers.length}</span>{" "}
+              <span className="text-gray-600">followers</span>
             </button>
             <button
               onClick={() => setOpenFollowingDialog(true)}
-              className="text-sm hover:underline"
+              className="hover:opacity-75 transition-opacity"
             >
-              <span className="font-bold">{following.length}</span> following
+              <span className="font-bold">{following.length}</span>{" "}
+              <span className="text-gray-600">following</span>
             </button>
-            {isOwnProfile && (
+            {isOwnProfile && requests.length >= 0 && (
               <button
                 onClick={() => setOpenRequestsDialog(true)}
-                className="text-sm hover:underline"
+                className="hover:opacity-75 transition-opacity"
               >
-                <span className="font-bold">{requests.length}</span> requests
+                <span className="font-bold text-blue-500">
+                  {requests.length}
+                </span>{" "}
+                <span className="text-gray-600">requests</span>
               </button>
             )}
           </div>
 
           <div>
-            <h2 className="font-bold">{userDetails.name}</h2>
+            <h2 className="font-medium">{userDetails.name}</h2>
           </div>
         </div>
       </div>
 
-      {/* Tabs Section */}
-      <div className="mt-8">
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          centered
-        >
-          <Tab label="Posts" />
-          <Tab label="Tagged" />
-        </Tabs>
-
-        <TabPanel value={activeTab} index={0}>
-          <div className="grid grid-cols-3 gap-4">
-            {/* Posts grid will go here */}
-            <div className="aspect-square bg-gray-100 flex items-center justify-center">
-              No posts yet
-            </div>
-          </div>
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={1}>
-          <div className="grid grid-cols-3 gap-4">
-            {/* Tagged posts will go here */}
-            <div className="aspect-square bg-gray-100 flex items-center justify-center">
-              No tagged posts
-            </div>
-          </div>
-        </TabPanel>
-      </div>
-
-      {/* Requests Dialog */}
-      <Dialog
-        open={openRequestsDialog}
-        onClose={() => setOpenRequestsDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Follow Requests</DialogTitle>
-        <DialogContent>
-          <List>
-            {requests.map((request) => (
-              <ListItem
-                key={request.id}
-                secondaryAction={
-                  <div className="flex gap-2">
-                    <IconButton
-                      edge="end"
-                      color="primary"
-                      onClick={() => acceptRequest(request.id)}
-                    >
-                      <Check />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      color="error"
-                      onClick={() => rejectRequest(request.id)}
-                    >
-                      <Close />
-                    </IconButton>
-                  </div>
-                }
-              >
-                <ListItemAvatar>
-                  <Avatar src={request.requester.profileImage || undefined} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={request.requester.username}
-                  secondary={request.requester.name}
-                />
-              </ListItem>
-            ))}
-            {requests.length === 0 && (
-              <ListItem>
-                <ListItemText primary="No pending requests" />
-              </ListItem>
-            )}
-          </List>
-        </DialogContent>
-      </Dialog>
-
-      {/* Followers Dialog */}
-      <Dialog
+      <FollowersDialog
         open={openFollowersDialog}
         onClose={() => setOpenFollowersDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Followers</DialogTitle>
-        <DialogContent>
-          <List>
-            {followers.map((follow) => (
-              <ListItem
-                key={follow.id}
-                secondaryAction={
-                  <IconButton edge="end">
-                    <MoreVert />
-                  </IconButton>
-                }
-              >
-                <ListItemAvatar>
-                  <Avatar src={follow.follower.profileImage || undefined} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={follow.follower.username}
-                  secondary={follow.follower.name}
-                />
-              </ListItem>
-            ))}
-            {followers.length === 0 && (
-              <ListItem>
-                <ListItemText primary="No followers yet" />
-              </ListItem>
-            )}
-          </List>
-        </DialogContent>
-      </Dialog>
+        followers={followers}
+      />
 
-      {/* Following Dialog */}
-      <Dialog
+      <FollowingDialog
         open={openFollowingDialog}
         onClose={() => setOpenFollowingDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Following</DialogTitle>
-        <DialogContent>
-          <List>
-            {following.map((follow) => (
-              <ListItem
-                key={follow.id}
-                secondaryAction={
-                  <IconButton edge="end">
-                    <MoreVert />
-                  </IconButton>
-                }
-              >
-                <ListItemAvatar>
-                  <Avatar src={follow.following.profileImage || undefined} />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={follow.following.username}
-                  secondary={follow.following.name}
-                />
-              </ListItem>
-            ))}
-            {following.length === 0 && (
-              <ListItem>
-                <ListItemText primary="Not following anyone" />
-              </ListItem>
-            )}
-          </List>
-        </DialogContent>
-      </Dialog>
+        following={following}
+      />
+
+      <RequestPopup
+        open={openRequestsDialog}
+        onClose={() => setOpenRequestsDialog(false)}
+        requests={requests}
+        acceptRequest={acceptRequest}
+        rejectRequest={rejectRequest}
+        isAccepting={isAccepting}
+        isRejecting={isRejecting}
+      />
     </div>
   );
 }
