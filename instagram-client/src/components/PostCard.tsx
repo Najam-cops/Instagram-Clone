@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardMedia,
   Typography,
   Avatar,
   IconButton,
@@ -15,32 +14,110 @@ import {
   TextField,
   Snackbar,
   Alert,
+  Menu,
+  MenuItem,
+  Box,
+  InputAdornment,
 } from "@mui/material";
-import Carousel from "react-material-ui-carousel";
 import { Post } from "../types/post";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useNavigate } from "react-router";
-import { DeleteForever, Edit } from "@mui/icons-material";
+import { MoreVert as MoreVertIcon } from "@mui/icons-material";
 import apiServices from "../../services/apiServices";
+import CommentsDialog from "./HomePage/CommentsDialog";
+import Carousel from "./HomePage/Carsoul";
 
 interface PostCardProps {
   post: Post;
   refreshPost: () => void;
+  updatePost: (post: Post) => void;
+  onDelete: (postId: string) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, refreshPost }) => {
-  const [liked, setLiked] = useState(false);
+const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
+  const [liked, setLiked] = useState(post.isLiked || false);
   const navigate = useNavigate();
-  const [likesCount, setLikesCount] = useState(post._count.Likes);
+  const [likesCommentCount, setLikesCommentCount] = useState(post._count);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editDescription, setEditDescription] = useState(post.description);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [comment, setComment] = useState("");
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comments, setComments] = useState<any[]>([]);
 
-  const handleLikeClick = () => {
-    setLiked(!liked);
-    setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
+  const handleLikeClick = async () => {
+    try {
+      if (liked) {
+        await apiServices.unlikePost(post.id);
+      } else {
+        await apiServices.likePost(post.id);
+      }
+      const newLiked = !liked;
+      setLiked(newLiked);
+      const newLikesCount = likesCommentCount.Likes + (newLiked ? 1 : -1);
+
+      const updatedPost = {
+        ...post,
+        isLiked: newLiked,
+        _count: {
+          ...likesCommentCount,
+          Likes: newLikesCount,
+        },
+      };
+
+      setLikesCommentCount((prev) => ({
+        ...prev,
+        Likes: newLikesCount,
+      }));
+      updatePost(updatedPost);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+
+    try {
+      const newComment = await apiServices.createComment(post.id, comment);
+      const updatedComments = [...comments, newComment];
+      setComments(updatedComments);
+      setComment("");
+
+      const updatedPost = {
+        ...post,
+        _count: {
+          ...likesCommentCount,
+          comments: likesCommentCount.comments + 1,
+        },
+      };
+
+      setLikesCommentCount((prev) => ({
+        ...prev,
+        comments: prev.comments + 1,
+      }));
+      updatePost(updatedPost);
+    } catch (error) {
+      console.error("Error posting comment:", error);
+    }
+  };
+
+  const loadComments = async () => {
+    try {
+      const fetchedComments = await apiServices.getPostComments(post.id);
+      setComments(fetchedComments);
+    } catch (error) {
+      console.error("Error loading comments:", error);
+    }
+  };
+
+  const handleCommentsClick = () => {
+    setCommentsOpen(true);
+    loadComments();
   };
 
   const handleDeleteClick = async () => {
@@ -48,7 +125,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, refreshPost }) => {
       const confirmDelete = window.confirm("Are you sure you want to delete?");
       if (confirmDelete) {
         await apiServices.deletePost(post.id);
-        refreshPost();
+        onDelete(post.id);
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -57,20 +134,16 @@ const PostCard: React.FC<PostCardProps> = ({ post, refreshPost }) => {
     }
   };
 
-  const handleUpdateClick = () => {
-    setEditDialogOpen(true);
-  };
-
-  const handleCommentClick = () => {
-    console.log("Comment clicked");
-  };
-
   const handleSaveEdit = async () => {
     try {
       await apiServices.updatePost(post.id, editDescription);
+      const updatedPost = {
+        ...post,
+        description: editDescription,
+      };
+      updatePost(updatedPost);
       setEditDialogOpen(false);
       setShowSuccess(true);
-      refreshPost();
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log("Error updating post", error.message);
@@ -78,81 +151,191 @@ const PostCard: React.FC<PostCardProps> = ({ post, refreshPost }) => {
     }
   };
 
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleEdit = () => {
+    setEditDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleDelete = async () => {
+    handleMenuClose();
+    await handleDeleteClick();
+  };
+
   return (
     <>
-      <Card className="max-w-[470px] mb-6 mx-auto border border-gray-200 rounded-lg shadow-none">
+      <Card className="max-w-[670px] mx-auto border border-[#DBDBDB] rounded-lg shadow-none bg-white">
         <CardHeader
-          onClick={() => navigate(`/profile/${post.user.id}`)}
-          className="px-4 py-3"
           avatar={
             <Avatar
+              onClick={() => navigate(`/profile/${post.user.id}`)}
               src={post.user.profileImage || undefined}
-              className="w-8 h-8"
-            >
-              {post.user.username[0].toUpperCase()}
-            </Avatar>
+              alt={post.user.username}
+              sx={{ bgcolor: "#0095F6" }}
+            />
+          }
+          action={
+            post.owned && (
+              <IconButton
+                onClick={handleMenuClick}
+                sx={{
+                  color: "#262626",
+                  "&:hover": {
+                    color: "#0095F6",
+                  },
+                }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+            )
           }
           title={
-            <span className="text-sm font-semibold">{post.user.username}</span>
-          }
-        />
-        {post.images.length > 0 && (
-          <CardMedia className="relative">
-            <Carousel
-              autoPlay={false}
-              animation="slide"
-              indicators={post.images.length > 1}
-              navButtonsAlwaysInvisible={post.images.length === 1}
-              className="aspect-square"
+            <Typography
+              variant="subtitle2"
+              className="font-semibold"
+              sx={{ color: "#262626" }}
             >
-              {post.images.map((image, index) => (
-                <img
-                  key={index}
-                  src={image.url}
-                  alt={post.description || `Post image ${index + 1}`}
-                  className="w-full h-[470px] object-cover"
-                />
-              ))}
-            </Carousel>
-          </CardMedia>
-        )}
-        <div className="px-4 pt-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <IconButton onClick={handleLikeClick} className="p-2">
-                {liked ? (
-                  <FavoriteIcon className="text-red-500" />
-                ) : (
-                  <FavoriteBorderIcon />
-                )}
-              </IconButton>
-              <IconButton onClick={handleCommentClick} className="p-2">
-                <ChatBubbleOutlineIcon />
-              </IconButton>
-              {post.owned && (
-                <>
-                  <IconButton className="p-2" onClick={handleDeleteClick}>
-                    <DeleteForever />
-                  </IconButton>
-                  <IconButton className="p-2" onClick={handleUpdateClick}>
-                    <Edit />
-                  </IconButton>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        <CardContent className="px-4 pt-1 pb-3">
-          <Typography className="text-sm font-semibold mb-1">
-            {likesCount} likes
+              {post.user.username}
+            </Typography>
+          }
+          sx={{
+            borderBottom: "1px solid #DBDBDB",
+            "& .MuiCardHeader-title": {
+              color: "#262626",
+            },
+          }}
+        />
+
+        <Carousel images={post.images} />
+
+        <Box className="px-4 py-2">
+          <Box className="flex gap-3">
+            <IconButton
+              onClick={handleLikeClick}
+              sx={{
+                color: liked ? "#ED4956" : "#262626",
+                padding: "8px",
+              }}
+            >
+              {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+            </IconButton>
+            <IconButton
+              onClick={handleCommentsClick}
+              sx={{
+                color: "#262626",
+                padding: "8px",
+              }}
+            >
+              <ChatBubbleOutlineIcon />
+            </IconButton>
+          </Box>
+
+          <Typography
+            variant="subtitle2"
+            className="font-semibold mb-1"
+            sx={{ color: "#262626" }}
+          >
+            {likesCommentCount.Likes} likes
           </Typography>
-          {post.description && (
-            <Typography className="text-sm">
-              <span className="font-semibold mr-2">{post.user.username}</span>
-              {post.description}
+        </Box>
+
+        <CardContent sx={{ pt: 0 }}>
+          <Typography
+            variant="body2"
+            className="mb-2"
+            sx={{ color: "#262626" }}
+          >
+            <span className="font-semibold mr-2">{post.user.username}</span>
+            {post.description}
+          </Typography>
+
+          {likesCommentCount.comments && (
+            <Typography
+              variant="body2"
+              onClick={handleCommentsClick}
+              sx={{
+                color: "#8E8E8E",
+                cursor: "pointer",
+                "&:hover": { color: "#262626" },
+              }}
+            >
+              View all {likesCommentCount.comments} comments
             </Typography>
           )}
+
+          <Box
+            component="form"
+            onSubmit={handleCommentSubmit}
+            sx={{
+              mt: 2,
+              display: "flex",
+              borderTop: "1px solid #DBDBDB",
+              pt: 2,
+            }}
+          >
+            <TextField
+              placeholder="Add a comment..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              fullWidth
+              variant="standard"
+              sx={{
+                "& .MuiInput-root": {
+                  "&:before, &:after": {
+                    display: "none",
+                  },
+                },
+              }}
+              InputProps={{
+                endAdornment: comment && (
+                  <InputAdornment position="end">
+                    <Button
+                      type="submit"
+                      sx={{
+                        textTransform: "none",
+                        color: "#0095F6",
+                        "&:hover": {
+                          backgroundColor: "transparent",
+                          color: "#00376B",
+                        },
+                      }}
+                    >
+                      Post
+                    </Button>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
         </CardContent>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          PaperProps={{
+            sx: {
+              "& .MuiMenuItem-root": {
+                color: "#262626",
+                "&:hover": {
+                  backgroundColor: "#FAFAFA",
+                },
+              },
+            },
+          }}
+        >
+          <MenuItem onClick={handleEdit}>Edit</MenuItem>
+          <MenuItem onClick={handleDelete} sx={{ color: "#ED4956" }}>
+            Delete
+          </MenuItem>
+        </Menu>
       </Card>
 
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
@@ -187,6 +370,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, refreshPost }) => {
           Post updated successfully
         </Alert>
       </Snackbar>
+
+      <CommentsDialog
+        postedById={post.user.id}
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        comments={comments}
+        setComments={setComments}
+      />
     </>
   );
 };

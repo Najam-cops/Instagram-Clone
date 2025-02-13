@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -142,6 +142,61 @@ export class UsersService {
             profileImage: true,
           },
         },
+      },
+    });
+  }
+
+  async getBlocked(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (userId !== requesterId) {
+      return [];
+    }
+
+    return this.prisma.blocks.findMany({
+      where: {
+        blockerId: userId,
+      },
+      include: {
+        blockedBy: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getPosts(userId: string) {
+    return this.prisma.post.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        images: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profileImage: true,
+          },
+        },
+        _count: {
+          select: {
+            Likes: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }

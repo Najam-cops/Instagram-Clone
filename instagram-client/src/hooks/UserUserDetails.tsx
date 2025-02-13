@@ -11,7 +11,9 @@ export const useUserDetails = (userId: string) => {
       const requests = await ApiService.getUserRequests(userId);
       const followers = await ApiService.getUserFollowers(userId);
       const following = await ApiService.getUserFollowing(userId);
-      return { userDetails, requests, followers, following };
+      const blocked = await ApiService.getUserBlocked(userId);
+      const posts = await ApiService.getUserPosts();
+      return { userDetails, requests, followers, following, blocked, posts };
     },
   });
 
@@ -26,6 +28,8 @@ export const useUserDetails = (userId: string) => {
     following: data?.following ?? [],
     loading: isLoading,
     error: isError ? error : null,
+    blocked: data?.blocked ?? [],
+    posts: data?.posts?.posts ?? [],
     refreshData,
   };
 };

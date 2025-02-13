@@ -10,6 +10,7 @@ export class CommentsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(comment: string, postId: string, userId: string) {
+    console.log(comment, postId, userId);
     return this.prisma.postComment.create({
       data: {
         comment,
@@ -65,17 +66,24 @@ export class CommentsService {
     // First check if comment exists and belongs to user
     const comment = await this.prisma.postComment.findUnique({
       where: { id },
+      include: {
+        post: {
+          select: {
+            userId: true,
+          },
+        },
+      },
     });
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
-    if (comment.userId !== userId) {
+    if (comment.userId !== userId && comment.post.userId !== userId) {
       throw new UnauthorizedException('You can only delete your own comments');
     }
 
-    const deleted = this.prisma.postComment.delete({
+    const deleted = await this.prisma.postComment.delete({
       where: { id },
     });
     return { message: 'Comment deleted' };

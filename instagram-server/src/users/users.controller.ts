@@ -44,6 +44,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('posts')
+  @UseGuards(JwtAuthGuard)
+  getPosts(@Req() req: RequestWithUser) {
+    return this.usersService.getPosts(req.user.id);
+  }
   @Get(':id/requests')
   @UseGuards(JwtAuthGuard)
   getFollowRequests(@Param('id') id: string, @Req() req: RequestWithUser) {
@@ -60,6 +65,12 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   getFollowing(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.usersService.getFollowing(id, req.user.id);
+  }
+
+  @Get(':id/blocked')
+  @UseGuards(JwtAuthGuard)
+  getBlocked(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.usersService.getBlocked(id, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

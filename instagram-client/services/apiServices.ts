@@ -17,6 +17,7 @@ interface PostsResponse {
 interface Post {
   id: string;
   description: string;
+  owned: boolean;
   images: { url: string }[];
   user: {
     id: string;
@@ -24,7 +25,8 @@ interface Post {
     profileImage: string | null;
   };
   _count: {
-    Likes: number;
+    likes: number;
+    comments: number;
   };
 }
 
@@ -92,6 +94,19 @@ class ApiService {
       null,
       true
     );
+  }
+
+  async getUserBlocked(userId: string): Promise<any> {
+    return await makeRequest(
+      `${USERS_API_URL}/${userId}/blocked`,
+      "GET",
+      null,
+      true
+    );
+  }
+
+  async getUserPosts(): Promise<PostsResponse> {
+    return await makeRequest(`${POSTS_API_URL}/`, "GET", null, true);
   }
 
   async getUserFollowing(userId: string): Promise<any> {
@@ -182,6 +197,35 @@ class ApiService {
       { description },
       true
     );
+  }
+
+  async likePost(postId: string): Promise<any> {
+    return await makeRequest(`likes/${postId}`, "POST", null, true);
+  }
+
+  async unlikePost(postId: string): Promise<any> {
+    return await makeRequest(`likes/${postId}`, "DELETE", null, true);
+  }
+
+  async createComment(postId: string, comment: string): Promise<any> {
+    return await makeRequest(`comments/${postId}`, "POST", { comment }, true);
+  }
+
+  async getPostComments(postId: string): Promise<any> {
+    return await makeRequest(`comments/post/${postId}`, "GET", null, true);
+  }
+
+  async editComments(commentId: string, comment: string): Promise<any> {
+    return await makeRequest(
+      `comments/${commentId}`,
+      "PATCH",
+      { comment },
+      true
+    );
+  }
+
+  async deleteComment(commentId: string): Promise<any> {
+    return await makeRequest(`comments/${commentId}`, "DELETE", null, true);
   }
 }
 

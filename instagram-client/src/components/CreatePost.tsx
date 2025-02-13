@@ -6,6 +6,7 @@ import {
   Button,
   IconButton,
   Box,
+  Typography,
 } from "@mui/material";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
@@ -15,12 +16,31 @@ interface CreatePostProps {
   onPostCreated: () => void;
 }
 
+const MAX_FILE_SIZE = 1 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
+
 const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const [description, setDescription] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const validateFile = (file: File): string | null => {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return `${file.name}: Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.`;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `${file.name}: File size exceeds 1MB limit.`;
+    }
+    return null;
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -29,14 +49,25 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       return;
     }
 
-    setSelectedFiles(files);
+    const newErrors: string[] = [];
+    const validFiles: File[] = [];
+    const validPreviews: string[] = [];
 
-    // Create URL previews
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    files.forEach((file) => {
+      const error = validateFile(file);
+      if (error) {
+        newErrors.push(error);
+      } else {
+        validFiles.push(file);
+        validPreviews.push(URL.createObjectURL(file));
+      }
+    });
+
+    setErrors(newErrors);
+    setSelectedFiles(validFiles);
     setPreviews((prev) => {
-      // Clean up old preview URLs
       prev.forEach((url) => URL.revokeObjectURL(url));
-      return newPreviews;
+      return validPreviews;
     });
   };
 
@@ -75,7 +106,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   };
 
   return (
-    <Card className="max-w-[470px] mb-6 mx-auto border border-gray-200 rounded-lg shadow-none">
+    <Card className="max-w-[670px] mb-6 mx-auto border border-[#DBDBDB] rounded-lg shadow-none bg-white">
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <TextField
@@ -86,17 +117,40 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
             onChange={(e) => setDescription(e.target.value)}
             fullWidth
             variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#DBDBDB",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#A8A8A8",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#0095F6",
+                },
+              },
+            }}
           />
 
           <Box className="relative">
             <input
               type="file"
-              accept="image/*"
+              accept={ALLOWED_FILE_TYPES.join(",")}
               multiple
               onChange={handleFileSelect}
               className="hidden"
               ref={fileInputRef}
             />
+
+            {errors.length > 0 && (
+              <Box className="mb-3">
+                {errors.map((error, index) => (
+                  <Typography key={index} color="error" variant="body2">
+                    {error}
+                  </Typography>
+                ))}
+              </Box>
+            )}
 
             {previews.length === 0 ? (
               <Button
@@ -105,8 +159,16 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
                 onClick={() => fileInputRef.current?.click()}
                 startIcon={<AddPhotoAlternateIcon />}
                 className="h-32"
+                sx={{
+                  borderColor: "#DBDBDB",
+                  color: "#0095F6",
+                  "&:hover": {
+                    borderColor: "#0095F6",
+                    backgroundColor: "rgba(0, 149, 246, 0.1)",
+                  },
+                }}
               >
-                Add Photos (Max 3)
+                Add Photos (Max 3, 5MB each)
               </Button>
             ) : (
               <Box className="grid grid-cols-3 gap-2">
@@ -144,7 +206,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
             variant="contained"
             color="primary"
             fullWidth
-            disabled={isSubmitting || selectedFiles.length === 0}
+            disabled={
+              isSubmitting || selectedFiles.length === 0 || errors.length > 0
+            }
+            sx={{
+              backgroundColor: "#0095F6",
+              "&:hover": {
+                backgroundColor: "#1877F2",
+              },
+              "&.Mui-disabled": {
+                backgroundColor: "#B2DFFC",
+              },
+            }}
           >
             {isSubmitting ? "Posting..." : "Share Post"}
           </Button>

@@ -10,7 +10,8 @@ import { UploadService } from 'src/upload/upload.service';
 interface PostWithUser extends Post {
   user: Pick<User, 'id' | 'username' | 'profileImage'>;
   images: { url: string }[];
-  _count: { Likes: number };
+  _count: { Likes: number; comments: number };
+  Likes: { id: string }[];
 }
 
 @Injectable()
@@ -69,7 +70,7 @@ export class PostsService {
 
     const posts = (await this.prisma.post.findMany({
       take,
-      skip: cursor ? 1 : 0, // Skip the cursor if we have one
+      skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
       orderBy,
       where: {
@@ -102,23 +103,34 @@ export class PostsService {
             profileImage: true,
           },
         },
+        Likes: {
+          where: {
+            userId: userId,
+          },
+          select: {
+            id: true,
+          },
+        },
         _count: {
           select: {
             Likes: true,
+            comments: true,
           },
         },
       },
     })) as PostWithUser[];
 
     let nextCursor: string | undefined;
-    if (posts && posts.length > 0) {
+    if (posts.length > 0) {
       const lastPostInResults = posts[posts.length - 1];
-      nextCursor = lastPostInResults?.id;
+      nextCursor = lastPostInResults.id;
     }
 
     const postsWithOwnership = posts.map((post) => ({
       ...post,
       owned: post.user.id === userId,
+      isLiked: post.Likes.length > 0,
+      Likes: undefined,
     }));
 
     return {

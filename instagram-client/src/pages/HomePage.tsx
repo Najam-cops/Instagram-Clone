@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { Container, CircularProgress, Box } from "@mui/material";
+import React, { useEffect, useState, useCallback } from "react";
+import { CircularProgress, Box } from "@mui/material";
 import PostCard from "../components/PostCard";
 import CreatePost from "../components/CreatePost";
 import ApiService from "../../services/apiServices";
 import { Post } from "../types/post";
 import { useAuth } from "../context/AuthContext";
-import Navbar from "../components/Navbar";
+import LeftSidebar from "../components/HomePage/LeftSidebar";
 
 const HomePage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await ApiService.getPosts();
@@ -22,6 +22,20 @@ const HomePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [user?.id]);
+
+  const updatePost = (updatedPost: Post) => {
+    setPosts((currentPosts) =>
+      currentPosts.map((post) =>
+        post.id === updatedPost.id ? updatedPost : post
+      )
+    );
+  };
+
+  const deletePost = (postId: string) => {
+    setPosts((currentPosts) =>
+      currentPosts.filter((post) => post.id !== postId)
+    );
   };
 
   const refreshPosts = () => {
@@ -31,25 +45,32 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [user?.id]);
 
   return (
-    <>
-      <Navbar />
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
-        {posts.map((post) => (
-          <div key={post.id}>
-            <PostCard post={post} refreshPost={refreshPosts} />
+    <div className="bg-[#FAFAFA] min-h-screen">
+      <div className="mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-7 gap-8 max-w-6xl">
+        <div className="md:col-span-5  w-full mx-auto">
+          {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                refreshPost={refreshPosts}
+                updatePost={updatePost}
+                onDelete={deletePost}
+              />
+            ))}
+            {loading && (
+              <Box display="flex" justifyContent="center" my={4}>
+                <CircularProgress sx={{ color: "#0095F6" }} />
+              </Box>
+            )}
           </div>
-        ))}
-        {loading && (
-          <Box display="flex" justifyContent="center" my={4}>
-            <CircularProgress />
-          </Box>
-        )}
-      </Container>
-    </>
+        </div>
+      </div>
+    </div>
   );
 };
 
