@@ -13,7 +13,6 @@ export const makeRequest = async (
     data,
   };
 
-  // Add Authorization header only for private API
   if (isPrivateApi) {
     const token = localStorage.getItem("token");
     if (token) {

@@ -3,10 +3,16 @@ import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../context/AuthContext";
 
 const AuthLayout: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  if (isAuthenticated) {
-    return <Navigate to="/home" />;
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
   }
+
+  if (isAuthenticated) {
+    return <Navigate to="/timeline" />;
+  }
+
   return (
     <div>
       <Outlet />

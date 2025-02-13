@@ -1,12 +1,32 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import ApiService from "../../services/apiServices";
 
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  profileImage: string | null;
+  isPrivate: boolean;
+  username: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SignUpData {
+  username: string;
+  password: string;
+  email: string;
+  name: string;
+}
+
 interface AuthContextProps {
   isAuthenticated: boolean;
   token: string | null;
+  user: User | null;
   signin: (username: string, password: string) => Promise<void>;
-  signup: (username: string, password: string) => Promise<void>;
+  signup: (data: SignUpData) => Promise<void>;
   logout: () => void;
+  isLoading: boolean;
 }
 
 interface AuthProviderProps {
@@ -18,21 +38,41 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
-      setIsAuthenticated(true);
-    }
+    const initializeAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
+
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const signin = async (username: string, password: string) => {
     try {
       const data = await ApiService.login(username, password);
       if (data.accessToken) {
-        localStorage.setItem("token", data.accessToken);
-        setToken(data.token);
+        const { accessToken, ...userData } = data;
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("user", JSON.stringify(userData));
+        setToken(accessToken);
+        setUser(userData);
         setIsAuthenticated(true);
       }
     } catch (error) {
@@ -40,28 +80,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signup = async (username: string, password: string) => {
+  const signup = async (data: SignUpData) => {
     try {
-      const data = await ApiService.signup(username, password);
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
+      const response = await ApiService.signup(data);
+      if (response.accessToken) {
+        const { accessToken, ...userData } = response;
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("user", JSON.stringify(userData));
+        setToken(accessToken);
+        setUser(userData);
         setIsAuthenticated(true);
       }
     } catch (error) {
       console.error("Signup failed:", error);
+      throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      await ApiService.logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, token, signin, signup, logout }}
+      value={{
+        isAuthenticated,
+        token,
+        user,
+        signin,
+        signup,
+        logout,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>

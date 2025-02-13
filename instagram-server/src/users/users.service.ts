@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-// import { CreateUserDto } from './dto/create-user.dto';
-// import { UpdateUserDto } from './dto/update-user.dto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -33,6 +31,118 @@ export class UsersService {
   remove(id: string) {
     return this.prisma.user.delete({
       where: { id },
+    });
+  }
+
+  async isFollower(followerId: string, followingId: string) {
+    const follow = await this.prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followingId,
+          followerId,
+        },
+      },
+    });
+    return !!follow;
+  }
+
+  async isFollowing(followerId: string, followingId: string) {
+    const follow = await this.prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    return !!follow;
+  }
+
+  async isBlocked(blockerId: string, blockedById: string) {
+    const block = await this.prisma.blocks.findUnique({
+      where: {
+        blockerId_blockedById: {
+          blockerId,
+          blockedById,
+        },
+      },
+    });
+    return !!block;
+  }
+
+  async getFollowRequests(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+    const isFollowing = await this.isFollowing(requesterId, userId);
+
+    if (user?.isPrivate && !isFollowing && userId !== requesterId) {
+      return [];
+    }
+
+    return this.prisma.followRequests.findMany({
+      where: {
+        requestedId: userId,
+        requestStatus: 'PENDING',
+      },
+      include: {
+        requester: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getFollowers(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+    const isFollowing = await this.isFollowing(requesterId, userId);
+
+    if (user?.isPrivate && !isFollowing && userId !== requesterId) {
+      return [];
+    }
+
+    return this.prisma.follows.findMany({
+      where: {
+        followingId: userId,
+      },
+      include: {
+        follower: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getFollowing(userId: string, requesterId: string) {
+    const user = await this.findOne(userId);
+    const isFollowing = await this.isFollowing(requesterId, userId);
+
+    if (user?.isPrivate && !isFollowing && userId !== requesterId) {
+      return [];
+    }
+
+    return this.prisma.follows.findMany({
+      where: {
+        followerId: userId,
+      },
+      include: {
+        following: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
     });
   }
 }
