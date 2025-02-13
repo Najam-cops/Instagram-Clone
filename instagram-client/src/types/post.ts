@@ -2,6 +2,7 @@ export interface Post {
   id: string;
   description: string;
   images: { url: string }[];
+  owned: boolean;
   user: {
     id: string;
     username: string;

@@ -1,7 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  Injectable,
+  NotAcceptableException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, Post, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UploadService } from 'src/upload/upload.service';
+
+interface PostWithUser extends Post {
+  user: Pick<User, 'id' | 'username' | 'profileImage'>;
+  images: { url: string }[];
+  _count: { Likes: number };
+}
 
 @Injectable()
 export class PostsService {
@@ -57,7 +67,7 @@ export class PostsService {
       orderBy = { createdAt: 'desc' },
     } = params;
 
-    const posts = await this.prisma.post.findMany({
+    const posts = (await this.prisma.post.findMany({
       take,
       skip: cursor ? 1 : 0, // Skip the cursor if we have one
       cursor: cursor ? { id: cursor } : undefined,
@@ -81,6 +91,7 @@ export class PostsService {
             },
           ],
         },
+        status: 'ACTIVE',
       },
       include: {
         images: true,
@@ -97,7 +108,7 @@ export class PostsService {
           },
         },
       },
-    });
+    })) as PostWithUser[];
 
     let nextCursor: string | undefined;
     if (posts && posts.length > 0) {
@@ -105,8 +116,13 @@ export class PostsService {
       nextCursor = lastPostInResults?.id;
     }
 
+    const postsWithOwnership = posts.map((post) => ({
+      ...post,
+      owned: post.user.id === userId,
+    }));
+
     return {
-      posts,
+      posts: postsWithOwnership,
       nextCursor,
     };
   }
@@ -117,16 +133,51 @@ export class PostsService {
     });
   }
 
-  async update(id: string, updatePostDto: Prisma.PostUpdateInput) {
+  async update(id: string, description: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+      select: {
+        userId: true,
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    console.log('description', description);
+
+    if (post.userId !== userId) {
+      throw new NotAcceptableException('You cannot update this post');
+    }
+
     return this.prisma.post.update({
       where: { id },
-      data: updatePostDto,
+      data: {
+        description: description,
+      },
     });
   }
 
-  async remove(id: string) {
-    return this.prisma.post.delete({
-      where: { id },
+  async remove(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: {
+        userId: true,
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.userId !== userId) {
+      throw new NotAcceptableException('You cannot delete this post found');
+    }
+
+    return this.prisma.post.update({
+      where: { id: postId },
+      data: { status: 'DELETED' },
     });
   }
 }

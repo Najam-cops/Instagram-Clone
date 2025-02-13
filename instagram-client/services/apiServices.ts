@@ -170,6 +170,19 @@ class ApiService {
       true
     );
   }
+
+  async deletePost(postId: string): Promise<any> {
+    return makeRequest(`${POSTS_API_URL}/${postId}`, "DELETE", null, true);
+  }
+
+  async updatePost(postId: string, description: string): Promise<any> {
+    return makeRequest(
+      `${POSTS_API_URL}/${postId}`,
+      "PATCH",
+      { description },
+      true
+    );
+  }
 }
 
 export default new ApiService();

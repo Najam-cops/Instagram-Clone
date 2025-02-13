@@ -84,6 +84,7 @@ model Post {
   images      PostImage[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  status     PostStatus @default(ACTIVE)
   Likes      PostLike[] @relation("likes")
   comments   PostComment[] @relation("comments")
   user    User     @relation(fields: [userId], references: [id])
@@ -139,4 +140,9 @@ enum RequestStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum PostStatus {
+  DELETED
+  ACTIVE
 }

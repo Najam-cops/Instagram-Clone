@@ -40,7 +40,7 @@ const HomePage: React.FC = () => {
         {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
         {posts.map((post) => (
           <div key={post.id}>
-            <PostCard post={post} />
+            <PostCard post={post} refreshPost={refreshPosts} />
           </div>
         ))}
         {loading && (

@@ -16,7 +16,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
-import { Prisma, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -81,15 +81,16 @@ export class PostsController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updatePostDto: Prisma.PostUpdateInput,
+    @Body() data: { description: string },
+    @Req() req: RequestWithUser,
   ) {
-    return this.postsService.update(id, updatePostDto);
+    return this.postsService.update(id, data.description, req.user.id);
   }
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postsService.remove(id);
+  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
+    return this.postsService.remove(id, req.user.id);
   }
 }
