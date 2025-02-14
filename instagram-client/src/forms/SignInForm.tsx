@@ -4,9 +4,15 @@ interface SignInFormProps {
   onSubmit: (e: React.FormEvent) => void;
   register: any;
   errors: any;
+  loading: boolean;
 }
 
-const SignInForm = ({ onSubmit, register, errors }: SignInFormProps) => {
+const SignInForm = ({
+  onSubmit,
+  register,
+  errors,
+  loading,
+}: SignInFormProps) => {
   return (
     <form
       className="flex flex-col items-center space-y-4 w-2xl gap-1"
@@ -35,6 +41,7 @@ const SignInForm = ({ onSubmit, register, errors }: SignInFormProps) => {
         variant="contained"
         color="primary"
         type="submit"
+        loading={loading}
         className="w-full"
       >
         Sign In

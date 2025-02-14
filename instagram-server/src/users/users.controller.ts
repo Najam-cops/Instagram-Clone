@@ -13,6 +13,8 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   UnauthorizedException,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -40,14 +42,25 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @UseGuards(JwtAuthGuard)
+  findAll(
+    @Req() req: RequestWithUser,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('search') search?: string,
+  ) {
+    return this.usersService.findAll(limit, search, req.user.id);
   }
 
   @Get('posts')
   @UseGuards(JwtAuthGuard)
   getPosts(@Req() req: RequestWithUser) {
     return this.usersService.getPosts(req.user.id);
+  }
+  @Patch('/privacy')
+  @UseGuards(JwtAuthGuard)
+  async togglePrivacy(@Req() req: RequestWithUser) {
+    const userId = req.user.id;
+    return this.usersService.togglePrivacy(userId);
   }
   @Get(':id/requests')
   @UseGuards(JwtAuthGuard)

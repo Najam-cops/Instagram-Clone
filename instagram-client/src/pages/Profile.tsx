@@ -18,6 +18,7 @@ import ProfileSidebar from "../components/profile/ProfileSidebar";
 import ProfilePosts from "../components/profile/ProfilePosts";
 import apiServices from "../../services/apiServices";
 import LockIcon from "@mui/icons-material/Lock";
+import { useAlert } from "../context/AlertContext";
 
 export default function Profile() {
   const { id } = useParams();
@@ -29,6 +30,7 @@ export default function Profile() {
   const [openBlockedDialog, setOpenBlockedDialog] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const { showAlert } = useAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const profileId = id || currentUser?.id;
@@ -60,12 +62,27 @@ export default function Profile() {
     }
   };
 
+  const handlePrivacyChange = async () => {
+    try {
+      await apiServices.togglePrivateAccount();
+      showAlert("Privacy settings updated", "success");
+      refreshData();
+    } catch (error) {
+      showAlert("Failed to update privacy settings", "error");
+      console.error("Error updating privacy settings:", error);
+    }
+  };
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setIsUploading(true);
     const file = event.target.files?.[0];
     if (!file || !currentUser) return;
+    if (file.size > 1 * 1024 * 1024) {
+      showAlert("Image size should be less than 1MB", "error");
+      setIsUploading(false);
+      return;
+    }
 
     try {
       const response = await apiServices.changeProfileImage(
@@ -77,62 +94,72 @@ export default function Profile() {
         throw new Error("Failed to upload image");
       }
 
+      showAlert("Profile image updated", "success");
+
       refreshData();
     } catch (error) {
+      showAlert("Failed to upload profile image", "error");
       console.error("Error uploading profile image:", error);
-      alert("Failed to upload profile image. Please try again.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleFollow = async () => {
+  const handleFollow = async (id?: string) => {
     try {
-      await apiServices.followUser(userDetails.id);
+      const userId = id || userDetails.id;
+      await apiServices.followUser(userId);
+      showAlert("User followed", "success");
       refreshData();
     } catch (error) {
       console.error("Error following user:", error);
-      alert("Failed to follow user. Please try again.");
+      showAlert("Failed to follow user", "error");
     }
   };
 
   const handleBlock = async () => {
     try {
       await apiServices.blockUser(userDetails.id);
+      showAlert("User blocked", "success");
       refreshData();
     } catch (error) {
       console.error("Error blocking user:", error);
-      alert("Failed to block user. Please try again.");
+      showAlert("Failed to block user", "error");
     }
   };
 
   const handleUnblock = async (userId: string) => {
     try {
       await apiServices.unblockUser(userId);
+      showAlert("User unblocked", "success");
       refreshData();
     } catch (error) {
       console.error("Error unblocking user:", error);
-      alert("Failed to unblock user. Please try again.");
+      showAlert("Failed to unblock user", "error");
     }
   };
 
-  const handleUnfollow = async () => {
+  const handleUnfollow = async (id?: string) => {
     try {
-      await apiServices.unfollowUser(userDetails.id);
+      const userId = id || userDetails?.id;
+      if (!userId) throw new Error("User ID is required to unfollow");
+      await apiServices.unfollowUser(userId);
+      showAlert("User unfollowed", "success");
       refreshData();
     } catch (error) {
       console.error("Error unfollowing user:", error);
-      alert("Failed to unfollow user. Please try again.");
+      showAlert("Failed to unfollow user", "error");
     }
   };
 
   const handlePostDelete = async (postId: string) => {
     try {
       await apiServices.deletePost(postId);
+      showAlert("Post deleted", "success");
       refreshData();
     } catch (error) {
       console.error("Error deleting post:", error);
-      alert("Failed to delete post. Please try again.");
+      showAlert("Failed to delete post", "error");
     }
   };
 
@@ -153,7 +180,7 @@ export default function Profile() {
   if (error?.userDetails || !userDetails) {
     return (
       <div className="text-center text-red-500 mt-4">
-        {error?.userDetails?.message || "User not found"}
+        <CircularProgress />
       </div>
     );
   }
@@ -244,9 +271,29 @@ export default function Profile() {
                     )}
                   </div>
                   {isOwnProfile ? (
-                    <Button variant="outlined" size="small">
-                      Edit Profile
-                    </Button>
+                    <>
+                      {userDetails.isPrivate && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="primary"
+                          onClick={handlePrivacyChange}
+                        >
+                          Make Profile Public
+                        </Button>
+                      )}
+
+                      {!userDetails.isPrivate && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="primary"
+                          onClick={handlePrivacyChange}
+                        >
+                          Make Profile Private
+                        </Button>
+                      )}
+                    </>
                   ) : (
                     <div className="flex gap-2">
                       {userDetails.isBlocked ? (
@@ -356,12 +403,14 @@ export default function Profile() {
         open={openFollowersDialog}
         onClose={() => setOpenFollowersDialog(false)}
         followers={followers}
+        handleFollow={handleFollow}
       />
 
       <FollowingDialog
         open={openFollowingDialog}
         onClose={() => setOpenFollowingDialog(false)}
         following={following}
+        handleUnfollow={handleUnfollow}
       />
 
       <RequestPopup

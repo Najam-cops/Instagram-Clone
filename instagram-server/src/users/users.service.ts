@@ -11,8 +11,61 @@ export class UsersService {
     });
   }
 
-  findAll() {
-    return this.prisma.user.findMany();
+  async findAll(limit?: number, search?: string, requesterId?: string) {
+    search = search?.trim();
+
+    const following = await this.prisma.follows.findMany({
+      where: {
+        followerId: requesterId,
+      },
+      select: {
+        followingId: true,
+      },
+    });
+
+    const followingIds = following.map((f) => f.followingId);
+
+    // Get all pending follow requests made by the requester
+    const pendingRequests = await this.prisma.followRequests.findMany({
+      where: {
+        requesterId,
+        requestStatus: 'PENDING',
+      },
+      select: {
+        requestedId: true,
+      },
+    });
+
+    const pendingRequestIds = pendingRequests.map((r) => r.requestedId);
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        username: {
+          contains: search,
+          mode: 'insensitive',
+        },
+        id: {
+          not: requesterId,
+          notIn: followingIds,
+        },
+      },
+      take: limit,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        profileImage: true,
+        isPrivate: true,
+        createdAt: true,
+      },
+    });
+
+    // Add requestSent field to each user
+    return users.map((user) => ({
+      ...user,
+      requestSent: pendingRequestIds.includes(user.id),
+    }));
   }
 
   findOne(id: string) {
@@ -23,7 +76,9 @@ export class UsersService {
 
   update(id: string, updateUserDto: Prisma.UserUpdateInput) {
     return this.prisma.user.update({
-      where: { id },
+      where: {
+        id: id,
+      },
       data: updateUserDto,
     });
   }
@@ -198,6 +253,26 @@ export class UsersService {
       orderBy: {
         createdAt: 'desc',
       },
+    });
+  }
+
+  async togglePrivacy(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    console.log('user', user);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updateData = {
+      isPrivate: !user.isPrivate,
+    } as Prisma.UserUpdateInput;
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
     });
   }
 }

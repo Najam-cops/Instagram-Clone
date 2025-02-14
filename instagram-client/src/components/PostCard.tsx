@@ -29,6 +29,7 @@ import { MoreVert as MoreVertIcon } from "@mui/icons-material";
 import apiServices from "../../services/apiServices";
 import CommentsDialog from "./HomePage/CommentsDialog";
 import Carousel from "./HomePage/Carsoul";
+import { useAlert } from "../context/AlertContext";
 
 interface PostCardProps {
   post: Post;
@@ -43,7 +44,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
   const [likesCommentCount, setLikesCommentCount] = useState(post._count);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editDescription, setEditDescription] = useState(post.description);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const { showAlert } = useAlert();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [comment, setComment] = useState("");
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -51,32 +52,41 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLikeClick = async () => {
+    const previousLiked = liked;
+    const previousCount = likesCommentCount.Likes;
+
+    setLiked(!liked);
+    setLikesCommentCount((prev) => ({
+      ...prev,
+      Likes: prev.Likes + (!liked ? 1 : -1),
+    }));
+
     try {
       if (liked) {
         await apiServices.unlikePost(post.id);
+        showAlert("Post unliked successfully", "success");
       } else {
         await apiServices.likePost(post.id);
+        showAlert("Post liked successfully", "success");
       }
-      const newLiked = !liked;
-      setLiked(newLiked);
-      const newLikesCount = likesCommentCount.Likes + (newLiked ? 1 : -1);
 
       const updatedPost = {
         ...post,
-        isLiked: newLiked,
+        isLiked: !liked,
         _count: {
           ...likesCommentCount,
-          Likes: newLikesCount,
+          Likes: likesCommentCount.Likes + (!liked ? 1 : -1),
         },
       };
-
-      setLikesCommentCount((prev) => ({
-        ...prev,
-        Likes: newLikesCount,
-      }));
       updatePost(updatedPost);
     } catch (error) {
       console.error("Error toggling like:", error);
+      setLiked(previousLiked);
+      setLikesCommentCount((prev) => ({
+        ...prev,
+        Likes: previousCount,
+      }));
+      showAlert("Failed to update like", "error");
     }
   };
 
@@ -84,11 +94,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
     e.preventDefault();
     if (!comment.trim()) return;
 
+    const newCommentText = comment;
+    setComment("");
+
     try {
-      const newComment = await apiServices.createComment(post.id, comment);
-      const updatedComments = [...comments, newComment];
-      setComments(updatedComments);
-      setComment("");
+      const newComment = await apiServices.createComment(
+        post.id,
+        newCommentText
+      );
+      setComments((prev) => [...prev, newComment]);
+
+      setLikesCommentCount((prev) => ({
+        ...prev,
+        comments: prev.comments + 1,
+      }));
 
       const updatedPost = {
         ...post,
@@ -97,14 +116,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
           comments: likesCommentCount.comments + 1,
         },
       };
-
-      setLikesCommentCount((prev) => ({
-        ...prev,
-        comments: prev.comments + 1,
-      }));
       updatePost(updatedPost);
+      showAlert("Comment posted successfully", "success");
     } catch (error) {
       console.error("Error posting comment:", error);
+      setComment(newCommentText);
+      showAlert("Failed to post comment", "error");
     }
   };
 
@@ -131,11 +148,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
       if (confirmDelete) {
         await apiServices.deletePost(post.id);
         onDelete(post.id);
+        showAlert("Post deleted successfully", "success");
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log("Error deleting post", error.message);
-      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      showAlert("Failed to delete post", "error");
     }
   };
 
@@ -148,11 +165,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
       };
       updatePost(updatedPost);
       setEditDialogOpen(false);
-      setShowSuccess(true);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.log("Error updating post", error.message);
-      }
+      showAlert("Post updated successfully", "success");
+    } catch (error) {
+      console.error("Error updating post:", error);
+      showAlert("Failed to update post", "error");
     }
   };
 
@@ -173,22 +189,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
     handleMenuClose();
     await handleDeleteClick();
   };
-
-  const renderLoadingSkeleton = () => (
-    <Box>
-      <Box className="flex gap-3">
-        <Skeleton variant="circular" width={40} height={40} />
-        <Box sx={{ flex: 1 }}>
-          <Skeleton variant="text" width={120} />
-        </Box>
-      </Box>
-      <Skeleton variant="rectangular" height={400} sx={{ mt: 2 }} />
-      <Box sx={{ pt: 2 }}>
-        <Skeleton variant="text" width={100} />
-        <Skeleton variant="text" width="80%" />
-      </Box>
-    </Box>
-  );
 
   return (
     <>
@@ -277,7 +277,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
             {post.description}
           </Typography>
 
-          {likesCommentCount.comments && (
+          {likesCommentCount.comments > 0 && (
             <Typography
               variant="body2"
               onClick={handleCommentsClick}
@@ -380,17 +380,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={showSuccess}
-        autoHideDuration={3000}
-        onClose={() => setShowSuccess(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" sx={{ width: "100%" }}>
-          Post updated successfully
-        </Alert>
-      </Snackbar>
 
       <CommentsDialog
         postedById={post.user.id}

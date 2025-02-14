@@ -3,10 +3,13 @@ import { useNavigate } from "react-router";
 import { Box, Typography, Alert } from "@mui/material";
 import SignUpForm from "../forms/SignUpForm";
 import { useAuth } from "../context/AuthContext";
+import { useAlert } from "../context/AlertContext";
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { signup } = useAuth();
+  const { showAlert } = useAlert();
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSignup = async (data: {
@@ -17,17 +20,16 @@ const SignupPage = () => {
     confirmPassword?: string;
   }) => {
     try {
-      setError(null);
-      // Remove confirmPassword before sending to API
+      setLoading(true);
       const { confirmPassword: _, ...signupData } = data;
       await signup(signupData);
+      showAlert("Successfully signed up!", "success");
       navigate("/");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setError(
-        error.response?.data?.message ||
-          "Failed to create account. Please try again."
-      );
+      showAlert(error.response?.data?.message || "Sign up failed", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,7 +46,7 @@ const SignupPage = () => {
           </Alert>
         )}
 
-        <SignUpForm onSubmit={handleSignup} />
+        <SignUpForm onSubmit={handleSignup} loading={loading} />
 
         <Box className="mt-4 text-center">
           <Typography variant="body2" color="textSecondary">

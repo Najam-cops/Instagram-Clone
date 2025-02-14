@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { z } from "zod";
+import { set, z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SignInForm from "../forms/SignInForm";
 import { useAuth } from "../context/AuthContext";
+import { useAlert } from "../context/AlertContext";
+import { useState } from "react";
 
 const signInSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -13,8 +14,9 @@ const signInSchema = z.object({
 type SignInFormData = z.infer<typeof signInSchema>;
 
 const SignInPage = () => {
-  const [error, setError] = useState<string | null>(null);
   const { signin } = useAuth();
+  const { showAlert } = useAlert();
+  const [loading, setLoading] = useState(false);
   const {
     register,
     handleSubmit,
@@ -23,13 +25,16 @@ const SignInPage = () => {
     resolver: zodResolver(signInSchema),
   });
 
-  const onSubmit = (data: SignInFormData) => {
-    setError(null);
+  const onSubmit = async (data: SignInFormData) => {
     try {
-      signin(data.username, data.password);
-    } catch (err) {
+      setLoading(true);
+      await signin(data.username, data.password);
+      showAlert("Successfully signed in!", "success");
+    } catch (err: any) {
       console.log(err);
-      setError("Sign in failed");
+      showAlert(err.message || "Sign in failed", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,8 +44,8 @@ const SignInPage = () => {
         onSubmit={handleSubmit(onSubmit)}
         register={register}
         errors={errors}
+        loading={loading}
       />
-      {error && <p className="text-red-500 mt-4">{error}</p>}
     </div>
   );
 };

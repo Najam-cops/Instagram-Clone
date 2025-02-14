@@ -9,6 +9,18 @@ import {
   UNBLOCK_USER,
 } from "./apiEndpoints";
 
+interface User {
+  id: string;
+  username: string;
+  name: string;
+  profileImage: string | null;
+  isFollowing: boolean;
+  isPrivate: boolean;
+  requestSent: boolean;
+  email: string;
+  createdAt: string;
+}
+
 interface PostsResponse {
   posts: Post[];
   nextCursor: string | null;
@@ -28,6 +40,8 @@ interface Post {
     likes: number;
     comments: number;
   };
+  likes: { userId: string }[];
+  isLiked: boolean;
 }
 
 interface SignUpData {
@@ -78,6 +92,16 @@ class ApiService {
     return await makeRequest(`${USERS_API_URL}/${userId}`, "GET", null, true);
   }
 
+  async getUsers(limit: number, search: string): Promise<User[]> {
+    const response = await makeRequest(
+      `${USERS_API_URL}?limit=${limit}&search=${search}`,
+      "GET",
+      null,
+      true
+    );
+    return response;
+  }
+
   async getUserRequests(userId: string): Promise<any> {
     return await makeRequest(
       `${USERS_API_URL}/${userId}/requests`,
@@ -106,7 +130,7 @@ class ApiService {
   }
 
   async getUserPosts(): Promise<PostsResponse> {
-    return await makeRequest(`${POSTS_API_URL}/`, "GET", null, true);
+    return await makeRequest(`${POSTS_API_URL}/me`, "GET", null, true);
   }
 
   async getUserFollowing(userId: string): Promise<any> {
@@ -155,6 +179,10 @@ class ApiService {
       formData,
       true
     );
+  }
+
+  async togglePrivateAccount(): Promise<any> {
+    return await makeRequest(`${USERS_API_URL}/privacy`, "PATCH", null, true);
   }
 
   async getCurrentUser(): Promise<any> {

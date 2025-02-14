@@ -14,8 +14,8 @@ export interface Post {
     Likes: number;
     comments: number;
   };
-  comments?: Comment[];
-  isLiked?: boolean;
+  comments: Comment[];
+  isLiked: boolean;
 }
 
 export interface Comment {

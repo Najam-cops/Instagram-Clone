@@ -1,7 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Box, Card, CardHeader, CardContent, Skeleton } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardHeader,
+  CardContent,
+  Skeleton,
+  Button,
+} from "@mui/material";
 import PostCard from "../components/PostCard";
 import CreatePost from "../components/CreatePost";
+import RightSidebar from "../components/HomePage/RightSidebar";
 import ApiService from "../../services/apiServices";
 import { Post } from "../types/post";
 import { useAuth } from "../context/AuthContext";
@@ -64,10 +72,15 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen">
-      <div className="mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-7 gap-8 max-w-6xl">
-        <div className="md:col-span-5 w-full mx-auto">
+      <div className="mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl">
+        <div className="lg:col-span-8">
           {isAuthenticated && <CreatePost onPostCreated={refreshPosts} />}
+
           <div className="space-y-4">
+            <div className="flex items-end justify-center">
+              <Button onClick={refreshPosts}>Refresh</Button>
+            </div>
+
             {loading ? (
               <>
                 <PostSkeleton />
@@ -86,6 +99,9 @@ const HomePage: React.FC = () => {
               ))
             )}
           </div>
+        </div>
+        <div className="hidden lg:block lg:col-span-4">
+          <RightSidebar />
         </div>
       </div>
     </div>

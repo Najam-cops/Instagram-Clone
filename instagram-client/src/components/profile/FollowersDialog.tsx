@@ -7,9 +7,8 @@ import {
   ListItemAvatar,
   ListItemText,
   Avatar,
-  IconButton,
+  Button,
 } from "@mui/material";
-import { MoreVert } from "@mui/icons-material";
 
 interface Follower {
   id: string;
@@ -25,9 +24,15 @@ type FollowersDialogProps = {
   open: boolean;
   onClose: () => void;
   followers: Follower[];
+  handleFollow: (followerId: string) => void;
 };
 
-function FollowersDialog({ open, onClose, followers }: FollowersDialogProps) {
+function FollowersDialog({
+  open,
+  onClose,
+  followers,
+  handleFollow,
+}: FollowersDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Followers</DialogTitle>
@@ -37,9 +42,13 @@ function FollowersDialog({ open, onClose, followers }: FollowersDialogProps) {
             <ListItem
               key={follow.id}
               secondaryAction={
-                <IconButton edge="end">
-                  <MoreVert />
-                </IconButton>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleFollow(follow.follower.id)}
+                >
+                  Follow Back
+                </Button>
               }
             >
               <ListItemAvatar>

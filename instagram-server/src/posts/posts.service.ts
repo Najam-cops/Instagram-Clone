@@ -90,6 +90,19 @@ export class PostsService {
                 },
               },
             },
+            {
+              OR: [
+                { isPrivate: false },
+                {
+                  followers: {
+                    some: {
+                      followerId: userId,
+                    },
+                  },
+                },
+                { id: userId },
+              ],
+            },
           ],
         },
         status: 'ACTIVE',
@@ -191,5 +204,24 @@ export class PostsService {
       where: { id: postId },
       data: { status: 'DELETED' },
     });
+  }
+
+  async findUserPosts(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        userId,
+      },
+    });
+    return posts;
   }
 }

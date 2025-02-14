@@ -71,6 +71,12 @@ export class PostsController {
     });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  findUserPosts(@Req() req: RequestWithUser) {
+    return this.postsService.findUserPosts(req.user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.postsService.findOne(id);
@@ -93,4 +99,5 @@ export class PostsController {
   remove(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.postsService.remove(id, req.user.id);
   }
+  
 }
