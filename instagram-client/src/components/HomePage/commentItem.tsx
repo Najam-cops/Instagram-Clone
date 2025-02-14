@@ -21,6 +21,8 @@ interface Comment {
     username: string;
     profileImage?: string;
   };
+  Likes: { userId: string }[];
+  isLiked: boolean;
   createdAt: string;
 }
 
@@ -37,17 +39,29 @@ const CommentItem: React.FC<CommentItemProps> = ({
   postedById,
   onCommentUpdate,
 }) => {
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(comment.isLiked);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [localComment, setLocalComment] = useState(comment);
 
+
+  console.log("CommentItem -> comment", comment);
+
   const canEdit = userId == comment.user.id;
   const canDelete = userId == comment.user.id || userId == postedById;
 
-  const handleLikeComment = () => {
+  const handleLikeComment = async () => {
     console.log("Toggling like for comment:", comment.id);
-    setIsLiked(!isLiked);
+    try {
+      setIsLiked((prev) => !prev);
+      if (isLiked) {
+        await apiServices.unlikeComment(comment.id);
+      } else {
+        await apiServices.likeComment(comment.id);
+      }
+    } catch (error) {
+      console.log("Error toggling like:", error);
+    }
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -84,14 +98,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
       // Revert on failure
       setLocalComment(originalComment);
       onCommentUpdate(comment.id, originalComment);
+    } finally {
+      setIsEditDialogOpen(false);
     }
   };
 
   const handleDeleteComment = async () => {
-    // Store the comment for potential restoration
     const deletedComment = { ...localComment };
 
-    // Optimistic update - remove the comment
     onCommentUpdate(comment.id, undefined);
     handleMenuClose();
 
@@ -135,16 +149,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
           </Typography>
         </Box>
         <Box className="flex items-center">
-          <IconButton
-            size="small"
-            onClick={handleLikeComment}
-            sx={{
-              color: isLiked ? "#ED4956" : "#262626",
-              padding: "4px",
-            }}
-          >
-            {isLiked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-          </IconButton>
           {(canDelete || canEdit) && (
             <IconButton
               size="small"
@@ -157,6 +161,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <MoreVertIcon />
             </IconButton>
           )}
+          <IconButton
+            size="small"
+            onClick={handleLikeComment}
+            sx={{
+              color: isLiked ? "#ED4956" : "#262626",
+              padding: "4px",
+            }}
+          >
+            {isLiked ? <FavoriteIcon /> : <FavoriteBorderIcon />}{" "}
+            {comment?.Likes?.length}
+          </IconButton>
         </Box>
       </Box>
 

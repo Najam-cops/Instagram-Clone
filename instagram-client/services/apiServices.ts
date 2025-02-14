@@ -227,6 +227,14 @@ class ApiService {
   async deleteComment(commentId: string): Promise<any> {
     return await makeRequest(`comments/${commentId}`, "DELETE", null, true);
   }
+
+  async likeComment(commentId: string): Promise<any> {
+    return await makeRequest(`comments/${commentId}/like`, "PUT", null, true);
+  }
+
+  async unlikeComment(commentId: string): Promise<any> {
+    return await makeRequest(`comments/${commentId}/unlike`, "PUT", null, true);
+  }
 }
 
 export default new ApiService();

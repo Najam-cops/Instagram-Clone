@@ -63,7 +63,6 @@ export class CommentsService {
   }
 
   async remove(id: string, userId: string) {
-    // First check if comment exists and belongs to user
     const comment = await this.prisma.postComment.findUnique({
       where: { id },
       include: {
@@ -83,14 +82,15 @@ export class CommentsService {
       throw new UnauthorizedException('You can only delete your own comments');
     }
 
-    const deleted = await this.prisma.postComment.delete({
+    await this.prisma.postComment.delete({
       where: { id },
     });
+
     return { message: 'Comment deleted' };
   }
 
-  async getPostComments(postId: string) {
-    return this.prisma.postComment.findMany({
+  async getPostComments(postId: string, userId: string) {
+    const comments = await this.prisma.postComment.findMany({
       where: { postId },
       include: {
         user: {
@@ -100,10 +100,81 @@ export class CommentsService {
             profileImage: true,
           },
         },
+        likes: {
+          select: {
+            userId: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return comments.map((comment) => {
+      return {
+        ...comment,
+        isLiked: comment?.likes?.some((like) => like.userId === userId),
+      };
+    });
+  }
+
+  async likeComment(commentId: string, userId: string) {
+    const comment = await this.prisma.postComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    const existingLike = await this.prisma.commentLike.findFirst({
+      where: {
+        commentId,
+        userId,
+      },
+    });
+
+    if (existingLike) {
+      throw new UnauthorizedException('You have already liked this comment');
+    }
+
+    return this.prisma.commentLike.create({
+      data: {
+        comment: {
+          connect: { id: commentId },
+        },
+        user: {
+          connect: { id: userId },
+        },
+      },
+    });
+  }
+
+  async unlikeComment(commentId: string, userId: string) {
+    const comment = await this.prisma.postComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    const like = await this.prisma.commentLike.findFirst({
+      where: {
+        commentId,
+        userId,
+      },
+    });
+
+    if (!like) {
+      throw new NotFoundException('You have not liked this comment');
+    }
+
+    await this.prisma.commentLike.delete({
+      where: { id: like.id },
+    });
+
+    return { message: 'Comment unliked successfully' };
   }
 }

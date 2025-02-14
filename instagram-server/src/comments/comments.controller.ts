@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Put,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -36,8 +37,29 @@ export class CommentsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('post/:postId')
-  getPostComments(@Param('postId') postId: string) {
-    return this.commentsService.getPostComments(postId);
+  getPostComments(
+    @Param('postId') postId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.commentsService.getPostComments(postId, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':commentId/like')
+  likeComment(
+    @Param('commentId') commentId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.commentsService.likeComment(commentId, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':commentId/unlike')
+  unlikeComment(
+    @Param('commentId') commentId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.commentsService.unlikeComment(commentId, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

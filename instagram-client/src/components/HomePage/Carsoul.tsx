@@ -44,7 +44,6 @@ const Carousel: React.FC<CarouselProps> = ({ images }) => {
 
       {images.length > 1 && (
         <>
-          {/* Slider indicators */}
           <div className="absolute z-30 flex -translate-x-1/2 bottom-5 left-1/2 space-x-3 rtl:space-x-reverse">
             {images.map((_, index) => (
               <button
@@ -59,8 +58,6 @@ const Carousel: React.FC<CarouselProps> = ({ images }) => {
               />
             ))}
           </div>
-
-          {/* Previous button */}
           <button
             type="button"
             className="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"
@@ -86,7 +83,6 @@ const Carousel: React.FC<CarouselProps> = ({ images }) => {
             </span>
           </button>
 
-          {/* Next button */}
           <button
             type="button"
             className="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none"

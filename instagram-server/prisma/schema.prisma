@@ -29,6 +29,7 @@ model User {
   posts     Post[]
   Likes     PostLike[]
   comments  PostComment[]
+  commentsLikes CommentLike[]
   followers Follows[] @relation("followers")
   following Follows[] @relation("following")
   requested FollowRequests[] @relation("requested")
@@ -121,9 +122,22 @@ model PostComment {
   postId    String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+  likes     CommentLike[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([postId])
+  @@index([userId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  comment   PostComment     @relation(fields: [commentId], references: [id])
+  commentId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([commentId])
   @@index([userId])
 }
 

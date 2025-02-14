@@ -18,6 +18,7 @@ import {
   MenuItem,
   Box,
   InputAdornment,
+  Skeleton,
 } from "@mui/material";
 import { Post } from "../types/post";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -47,6 +48,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
   const [comment, setComment] = useState("");
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLikeClick = async () => {
     try {
@@ -108,10 +110,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
 
   const loadComments = async () => {
     try {
+      setIsLoading(true);
       const fetchedComments = await apiServices.getPostComments(post.id);
       setComments(fetchedComments);
     } catch (error) {
       console.error("Error loading comments:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -168,6 +173,22 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
     handleMenuClose();
     await handleDeleteClick();
   };
+
+  const renderLoadingSkeleton = () => (
+    <Box>
+      <Box className="flex gap-3">
+        <Skeleton variant="circular" width={40} height={40} />
+        <Box sx={{ flex: 1 }}>
+          <Skeleton variant="text" width={120} />
+        </Box>
+      </Box>
+      <Skeleton variant="rectangular" height={400} sx={{ mt: 2 }} />
+      <Box sx={{ pt: 2 }}>
+        <Skeleton variant="text" width={100} />
+        <Skeleton variant="text" width="80%" />
+      </Box>
+    </Box>
+  );
 
   return (
     <>
@@ -377,6 +398,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
         onClose={() => setCommentsOpen(false)}
         comments={comments}
         setComments={setComments}
+        isloading={isLoading}
       />
     </>
   );

@@ -1,7 +1,13 @@
 import { useParams, useNavigate } from "react-router";
 import { useUserDetails } from "../hooks/UserUserDetails";
 import { useFollowRequests } from "../hooks/useFollowRequests";
-import { Avatar, Button, CircularProgress, Grid } from "@mui/material";
+import {
+  Avatar,
+  Button,
+  CircularProgress,
+  Grid,
+  Skeleton,
+} from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import FollowersDialog from "../components/profile/FollowersDialog";
@@ -136,7 +142,7 @@ export default function Profile() {
 
   if (!currentUser) return null;
 
-  if (loading || userLoading) {
+  if (userLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <CircularProgress />
@@ -144,160 +150,203 @@ export default function Profile() {
     );
   }
 
-  if (error || !userDetails) {
+  if (error?.userDetails || !userDetails) {
     return (
       <div className="text-center text-red-500 mt-4">
-        {error || "User not found"}
+        {error?.userDetails?.message || "User not found"}
       </div>
     );
   }
 
   const isOwnProfile = currentUser.id === userDetails.id;
 
+  const ProfileHeaderSkeleton = () => (
+    <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+      <Skeleton variant="circular" width={150} height={150} />
+      <div className="flex-grow space-y-4">
+        <div className="flex items-center gap-2">
+          <Skeleton variant="text" width={200} height={32} />
+        </div>
+        <Skeleton variant="text" width={150} />
+        <Skeleton variant="text" width={300} />
+      </div>
+    </div>
+  );
+
+  const ProfileStatsSkeleton = () => (
+    <div className="flex gap-4">
+      {[1, 2, 3].map((i) => (
+        <Skeleton key={i} variant="rectangular" width={100} height={50} />
+      ))}
+    </div>
+  );
+
+  const PostsSkeleton = () => (
+    <div className="grid grid-cols-3 gap-4">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <Skeleton key={i} variant="rectangular" width="100%" height={200} />
+      ))}
+    </div>
+  );
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <Grid container spacing={4}>
         <Grid item xs={12}>
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-            <div className="relative">
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileSelect}
-                disabled={isUploading}
-              />
-              <div
-                className={`relative cursor-pointer ${
-                  isOwnProfile ? "hover:opacity-90" : ""
-                }`}
-                onClick={handleImageClick}
-              >
-                <Avatar
-                  src={userDetails.profileImage || undefined}
-                  alt={userDetails.username}
-                  sx={{
-                    width: 150,
-                    height: 150,
-                  }}
+          {loading.userDetails ? (
+            <ProfileHeaderSkeleton />
+          ) : (
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="relative">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={isUploading}
                 />
-                {isOwnProfile && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity rounded-full">
-                    <span className="text-white text-sm">Change photo</span>
-                  </div>
-                )}
-                {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-90 rounded-full">
-                    <CircularProgress color="primary" size={24} />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-grow space-y-4 text-center md:text-left">
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold">{userDetails.username}</h1>
-                  {userDetails.isPrivate && (
-                    <LockIcon className="text-gray-500" fontSize="small" />
+                <div
+                  className={`relative cursor-pointer ${
+                    isOwnProfile ? "hover:opacity-90" : ""
+                  }`}
+                  onClick={handleImageClick}
+                >
+                  <Avatar
+                    src={userDetails.profileImage || undefined}
+                    alt={userDetails.username}
+                    sx={{
+                      width: 150,
+                      height: 150,
+                    }}
+                  />
+                  {isOwnProfile && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity rounded-full">
+                      <span className="text-white text-sm">Change photo</span>
+                    </div>
+                  )}
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-90 rounded-full">
+                      <CircularProgress color="primary" size={24} />
+                    </div>
                   )}
                 </div>
-                {isOwnProfile ? (
-                  <Button variant="outlined" size="small">
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    {userDetails.isBlocked ? (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        color="error"
-                        onClick={() => handleUnblock(userDetails.id)}
-                      >
-                        Unblock
-                      </Button>
-                    ) : (
-                      <>
-                        {userDetails.isFollowing ? (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            color="primary"
-                            onClick={handleUnfollow}
-                          >
-                            Unfollow
-                          </Button>
-                        ) : userDetails.isFollower ? (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            color="primary"
-                            onClick={handleFollow}
-                          >
-                            Follow Back
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="contained"
-                            size="small"
-                            color="primary"
-                            onClick={handleFollow}
-                          >
-                            Follow
-                          </Button>
-                        )}
+              </div>
+
+              <div className="flex-grow space-y-4 text-center md:text-left">
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold">
+                      {userDetails.username}
+                    </h1>
+                    {userDetails.isPrivate && (
+                      <LockIcon className="text-gray-500" fontSize="small" />
+                    )}
+                  </div>
+                  {isOwnProfile ? (
+                    <Button variant="outlined" size="small">
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      {userDetails.isBlocked ? (
                         <Button
                           variant="outlined"
                           size="small"
                           color="error"
-                          onClick={handleBlock}
+                          onClick={() => handleUnblock(userDetails.id)}
                         >
-                          Block
+                          Unblock
                         </Button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                      ) : (
+                        <>
+                          {userDetails.isFollowing ? (
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color="primary"
+                              onClick={handleUnfollow}
+                            >
+                              Unfollow
+                            </Button>
+                          ) : userDetails.isFollower ? (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={handleFollow}
+                            >
+                              Follow Back
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              color="primary"
+                              onClick={handleFollow}
+                            >
+                              Follow
+                            </Button>
+                          )}
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="error"
+                            onClick={handleBlock}
+                          >
+                            Block
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <h2 className="font-medium">{userDetails.name}</h2>
-                {userDetails.bio && (
-                  <p className="text-gray-600 mt-2">{userDetails.bio}</p>
-                )}
+                <div>
+                  <h2 className="font-medium">{userDetails.name}</h2>
+                  {userDetails.bio && (
+                    <p className="text-gray-600 mt-2">{userDetails.bio}</p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </Grid>
 
         {!userDetails.isPrivateAndNotFollowing && (
           <>
             <Grid item xs={12} md={3}>
-              <ProfileSidebar
-                isOwnProfile={isOwnProfile}
-                followers={followers}
-                following={following}
-                requests={requests}
-                blocked={blocked}
-                posts={posts}
-                onOpenFollowers={() => setOpenFollowersDialog(true)}
-                onOpenFollowing={() => setOpenFollowingDialog(true)}
-                onOpenRequests={() => setOpenRequestsDialog(true)}
-                onOpenBlocked={() => setOpenBlockedDialog(true)}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
+              {loading.followers || loading.following || loading.requests ? (
+                <ProfileStatsSkeleton />
+              ) : (
+                <ProfileSidebar
+                  isOwnProfile={isOwnProfile}
+                  followers={followers}
+                  following={following}
+                  requests={requests}
+                  blocked={blocked}
+                  posts={posts}
+                  onOpenFollowers={() => setOpenFollowersDialog(true)}
+                  onOpenFollowing={() => setOpenFollowingDialog(true)}
+                  onOpenRequests={() => setOpenRequestsDialog(true)}
+                  onOpenBlocked={() => setOpenBlockedDialog(true)}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                />
+              )}
             </Grid>
 
             <Grid item xs={12} md={9}>
-              <ProfilePosts
-                posts={posts}
-                refreshPosts={refreshData}
-                updatePost={handlePostUpdate}
-                onDelete={handlePostDelete}
-              />
+              {loading.posts ? (
+                <PostsSkeleton />
+              ) : (
+                <ProfilePosts
+                  posts={posts}
+                  refreshPosts={refreshData}
+                  updatePost={handlePostUpdate}
+                  onDelete={handlePostDelete}
+                />
+              )}
             </Grid>
           </>
         )}

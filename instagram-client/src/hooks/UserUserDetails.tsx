@@ -1,20 +1,43 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import ApiService from "../../services/apiServices";
 
 export const useUserDetails = (userId: string) => {
   const queryClient = useQueryClient();
 
-  const { data, isError, isLoading, error } = useQuery({
-    queryKey: ["user-details", userId],
-    queryFn: async () => {
-      const userDetails = await ApiService.getUserDetails(userId);
-      const requests = await ApiService.getUserRequests(userId);
-      const followers = await ApiService.getUserFollowers(userId);
-      const following = await ApiService.getUserFollowing(userId);
-      const blocked = await ApiService.getUserBlocked(userId);
-      const posts = await ApiService.getUserPosts();
-      return { userDetails, requests, followers, following, blocked, posts };
-    },
+  const [
+    userDetailsQuery,
+    requestsQuery,
+    followersQuery,
+    followingQuery,
+    blockedQuery,
+    postsQuery,
+  ] = useQueries({
+    queries: [
+      {
+        queryKey: ["user-details", userId, "profile"],
+        queryFn: () => ApiService.getUserDetails(userId),
+      },
+      {
+        queryKey: ["user-details", userId, "requests"],
+        queryFn: () => ApiService.getUserRequests(userId),
+      },
+      {
+        queryKey: ["user-details", userId, "followers"],
+        queryFn: () => ApiService.getUserFollowers(userId),
+      },
+      {
+        queryKey: ["user-details", userId, "following"],
+        queryFn: () => ApiService.getUserFollowing(userId),
+      },
+      {
+        queryKey: ["user-details", userId, "blocked"],
+        queryFn: () => ApiService.getUserBlocked(userId),
+      },
+      {
+        queryKey: ["user-details", userId, "posts"],
+        queryFn: () => ApiService.getUserPosts(),
+      },
+    ],
   });
 
   const refreshData = () => {
@@ -22,14 +45,28 @@ export const useUserDetails = (userId: string) => {
   };
 
   return {
-    userDetails: data?.userDetails ?? null,
-    requests: data?.requests ?? [],
-    followers: data?.followers ?? [],
-    following: data?.following ?? [],
-    loading: isLoading,
-    error: isError ? error : null,
-    blocked: data?.blocked ?? [],
-    posts: data?.posts?.posts ?? [],
+    userDetails: userDetailsQuery.data ?? null,
+    requests: requestsQuery.data ?? [],
+    followers: followersQuery.data ?? [],
+    following: followingQuery.data ?? [],
+    blocked: blockedQuery.data ?? [],
+    posts: postsQuery.data?.posts ?? [],
+    loading: {
+      userDetails: userDetailsQuery.isLoading,
+      requests: requestsQuery.isLoading,
+      followers: followersQuery.isLoading,
+      following: followingQuery.isLoading,
+      blocked: blockedQuery.isLoading,
+      posts: postsQuery.isLoading,
+    },
+    error: {
+      userDetails: userDetailsQuery.error,
+      requests: requestsQuery.error,
+      followers: followersQuery.error,
+      following: followingQuery.error,
+      blocked: blockedQuery.error,
+      posts: postsQuery.error,
+    },
     refreshData,
   };
 };
