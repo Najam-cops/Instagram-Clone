@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -46,10 +46,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
   const [editDescription, setEditDescription] = useState(post.description);
   const { showAlert } = useAlert();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState<any>();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [singleComment, setSingleComment] = useState<any>();
+
+  const getSingleComment = async (postId: string) => {
+    try {
+      const response = await apiServices.getSingleComment(postId);
+      setSingleComment(response);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+    }
+  };
+
+  useEffect(() => {
+    getSingleComment(post.id);
+  }, [post.id]);
 
   const handleLikeClick = async () => {
     const previousLiked = liked;
@@ -95,6 +109,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
     if (!comment.trim()) return;
 
     const newCommentText = comment;
+    setSingleComment({ ...singleComment, comment: newCommentText });
     setComment("");
 
     try {
@@ -273,9 +288,19 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
             className="mb-2"
             sx={{ color: "#262626" }}
           >
-            <span className="font-semibold mr-2">{post.user.username}</span>
+            <span className="font-semibold mr-2">Description</span>
             {post.description}
           </Typography>
+          <div className="space-y-2" onClick={() => setCommentsOpen(true)}>
+            <Box className="flex-grow">
+              <Typography variant="body2">
+                <span className="font-semibold mr-2">
+                  {singleComment?.user?.username}
+                </span>
+                {singleComment?.comment}
+              </Typography>
+            </Box>
+          </div>
 
           {likesCommentCount.comments > 0 && (
             <Typography

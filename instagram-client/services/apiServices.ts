@@ -263,6 +263,15 @@ class ApiService {
   async unlikeComment(commentId: string): Promise<any> {
     return await makeRequest(`comments/${commentId}/unlike`, "PUT", null, true);
   }
+
+  async getSingleComment(postId: string): Promise<Post> {
+    return await makeRequest(
+      `comments/post/${postId}/comment`,
+      "GET",
+      null,
+      true
+    );
+  }
 }
 
 export default new ApiService();

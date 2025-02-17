@@ -11,6 +11,7 @@ import { FollowsService } from './follows.service';
 import { RequestsService } from './requests.service';
 import { BlocksService } from './blocks.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtBlacklistGuard } from 'src/guards/BlackListToken';
 
 interface RequestUser {
   id: string;
@@ -18,6 +19,7 @@ interface RequestUser {
 }
 
 @Controller('follows')
+@UseGuards(JwtBlacklistGuard)
 export class FollowsController {
   constructor(
     private readonly followsService: FollowsService,

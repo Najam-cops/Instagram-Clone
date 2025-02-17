@@ -119,6 +119,34 @@ export class CommentsService {
     });
   }
 
+  async getSingleComment(postId: string, userId: string) {
+    const comment = await this.prisma.postComment.findFirst({
+      where: { postId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profileImage: true,
+          },
+        },
+        likes: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      ...comment,
+      isLiked: comment?.likes?.some((like) => like.userId === userId),
+    };
+  }
+
   async likeComment(commentId: string, userId: string) {
     const comment = await this.prisma.postComment.findUnique({
       where: { id: commentId },

@@ -44,7 +44,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [localComment, setLocalComment] = useState(comment);
 
-
   console.log("CommentItem -> comment", comment);
 
   const canEdit = userId == comment.user.id;
