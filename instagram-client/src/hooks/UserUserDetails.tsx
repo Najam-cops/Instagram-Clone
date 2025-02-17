@@ -44,13 +44,15 @@ export const useUserDetails = (userId: string) => {
     queryClient.invalidateQueries({ queryKey: ["user-details", userId] });
   };
 
+  console.log("user details", postsQuery.data);
+
   return {
     userDetails: userDetailsQuery.data ?? null,
     requests: requestsQuery.data ?? [],
     followers: followersQuery.data ?? [],
     following: followingQuery.data ?? [],
     blocked: blockedQuery.data ?? [],
-    posts: postsQuery.data?.posts ?? [],
+    posts: postsQuery.data ?? [],
     loading: {
       userDetails: userDetailsQuery.isLoading,
       requests: requestsQuery.isLoading,

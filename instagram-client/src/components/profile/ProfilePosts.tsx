@@ -29,6 +29,7 @@ export default function ProfilePosts({
             refreshPost={refreshPosts}
             updatePost={updatePost}
             onDelete={onDelete}
+            fromProfile={true}
           />
         </Grid>
       ))}

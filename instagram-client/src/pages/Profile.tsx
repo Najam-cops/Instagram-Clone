@@ -53,6 +53,8 @@ export default function Profile() {
     refreshData,
   } = useUserDetails(profileId || "");
 
+  console.log("profile posts from profile", posts);
+
   const { acceptRequest, rejectRequest, isAccepting, isRejecting } =
     useFollowRequests(profileId || "");
 
@@ -404,6 +406,7 @@ export default function Profile() {
         onClose={() => setOpenFollowersDialog(false)}
         followers={followers}
         handleFollow={handleFollow}
+        isOwnProfile={isOwnProfile}
       />
 
       <FollowingDialog
@@ -411,6 +414,7 @@ export default function Profile() {
         onClose={() => setOpenFollowingDialog(false)}
         following={following}
         handleUnfollow={handleUnfollow}
+        isOwnProfile={isOwnProfile}
       />
 
       <RequestPopup
@@ -421,6 +425,7 @@ export default function Profile() {
         rejectRequest={rejectRequest}
         isAccepting={isAccepting}
         isRejecting={isRejecting}
+        isOwnProfile={isOwnProfile}
       />
 
       <BlockedDialog
@@ -428,6 +433,7 @@ export default function Profile() {
         onClose={() => setOpenBlockedDialog(false)}
         blocked={blocked}
         onUnblock={handleUnblock}
+        isOwnProfile={isOwnProfile}
       />
     </div>
   );

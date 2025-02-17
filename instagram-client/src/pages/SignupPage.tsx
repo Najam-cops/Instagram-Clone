@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Box, Typography, Alert } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import SignUpForm from "../forms/SignUpForm";
 import { useAuth } from "../context/AuthContext";
-import { useAlert } from "../context/AlertContext";
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { signup } = useAuth();
-  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSignup = async (data: {
     email: string;
@@ -23,11 +20,9 @@ const SignupPage = () => {
       setLoading(true);
       const { confirmPassword: _, ...signupData } = data;
       await signup(signupData);
-      showAlert("Successfully signed up!", "success");
       navigate("/");
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      showAlert(error.response?.data?.message || "Sign up failed", "error");
+      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -39,12 +34,6 @@ const SignupPage = () => {
         <Typography variant="h4" className="text-center mb-6">
           Create Account
         </Typography>
-
-        {error && (
-          <Alert severity="error" className="mb-4">
-            {error}
-          </Alert>
-        )}
 
         <SignUpForm onSubmit={handleSignup} loading={loading} />
 

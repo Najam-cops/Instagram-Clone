@@ -25,6 +25,7 @@ type FollowingDialogProps = {
   onClose: () => void;
   following: Following[];
   handleUnfollow: (id: string) => void;
+  isOwnProfile: boolean;
 };
 
 function FollowingDialog({
@@ -32,6 +33,7 @@ function FollowingDialog({
   onClose,
   following,
   handleUnfollow,
+  isOwnProfile,
 }: FollowingDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -42,13 +44,15 @@ function FollowingDialog({
             <ListItem
               key={follow.id}
               secondaryAction={
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handleUnfollow(follow.following.id)}
-                >
-                  UnFollow
-                </Button>
+                isOwnProfile && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleUnfollow(follow.following.id)}
+                  >
+                    Unfollow
+                  </Button>
+                )
               }
             >
               <ListItemAvatar>

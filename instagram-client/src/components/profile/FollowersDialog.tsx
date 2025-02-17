@@ -25,6 +25,7 @@ type FollowersDialogProps = {
   onClose: () => void;
   followers: Follower[];
   handleFollow: (followerId: string) => void;
+  isOwnProfile: boolean;
 };
 
 function FollowersDialog({
@@ -32,6 +33,7 @@ function FollowersDialog({
   onClose,
   followers,
   handleFollow,
+  isOwnProfile,
 }: FollowersDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -41,15 +43,15 @@ function FollowersDialog({
           {followers.map((follow) => (
             <ListItem
               key={follow.id}
-              secondaryAction={
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handleFollow(follow.follower.id)}
-                >
-                  Follow Back
-                </Button>
-              }
+              // secondaryAction={
+              //   <Button
+              //     variant="outlined"
+              //     size="small"
+              //     onClick={() => handleFollow(follow.follower.id)}
+              //   >
+              //     Follow Back
+              //   </Button>
+              // }
             >
               <ListItemAvatar>
                 <Avatar src={follow.follower.profileImage || undefined} />

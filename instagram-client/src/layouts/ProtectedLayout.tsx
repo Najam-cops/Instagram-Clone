@@ -20,6 +20,15 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  if (!isAuthenticated) {
+    navigate("/signin");
+    return null;
+  }
+
   const navigation = [
     {
       name: "Timeline",

@@ -1,10 +1,11 @@
-import { set, z } from "zod";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SignInForm from "../forms/SignInForm";
 import { useAuth } from "../context/AuthContext";
-import { useAlert } from "../context/AlertContext";
 import { useState } from "react";
+import { Box, Typography } from "@mui/material";
+import { useNavigate } from "react-router";
 
 const signInSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -15,8 +16,8 @@ type SignInFormData = z.infer<typeof signInSchema>;
 
 const SignInPage = () => {
   const { signin } = useAuth();
-  const { showAlert } = useAlert();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -29,10 +30,8 @@ const SignInPage = () => {
     try {
       setLoading(true);
       await signin(data.username, data.password);
-      showAlert("Successfully signed in!", "success");
     } catch (err: any) {
       console.log(err);
-      showAlert(err.message || "Sign in failed", "error");
     } finally {
       setLoading(false);
     }
@@ -46,6 +45,17 @@ const SignInPage = () => {
         errors={errors}
         loading={loading}
       />
+      <Box className="mt-4 text-center">
+        <Typography variant="body2" color="textSecondary">
+          Dost Not have an account?{" "}
+          <span
+            onClick={() => navigate("/signup")}
+            className="text-blue-500 cursor-pointer hover:underline"
+          >
+            Sign Up
+          </span>
+        </Typography>
+      </Box>
     </div>
   );
 };

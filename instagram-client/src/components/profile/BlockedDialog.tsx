@@ -18,6 +18,7 @@ interface BlockedDialogProps {
   onClose: () => void;
   blocked: any[];
   onUnblock: (userId: string) => void;
+  isOwnProfile: boolean;
 }
 
 export default function BlockedDialog({
@@ -25,6 +26,7 @@ export default function BlockedDialog({
   onClose,
   blocked,
   onUnblock,
+  isOwnProfile,
 }: BlockedDialogProps) {
   const navigate = useNavigate();
 
@@ -43,13 +45,15 @@ export default function BlockedDialog({
               key={block.blockedBy.id}
               className="flex justify-between items-center"
               secondaryAction={
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => onUnblock(block.blockedBy.id)}
-                >
-                  Unblock
-                </Button>
+                isOwnProfile && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => onUnblock(block.blockedBy.id)}
+                  >
+                    Unblock
+                  </Button>
+                )
               }
             >
               <div

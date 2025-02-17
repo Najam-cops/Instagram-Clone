@@ -31,6 +31,7 @@ type RequestPopupProps = {
   rejectRequest: (id: string) => void;
   isAccepting: boolean;
   isRejecting: boolean;
+  isOwnProfile: boolean;
 };
 
 function RequestPopup({
@@ -41,6 +42,7 @@ function RequestPopup({
   rejectRequest,
   isAccepting,
   isRejecting,
+  isOwnProfile,
 }: RequestPopupProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -51,24 +53,26 @@ function RequestPopup({
             <ListItem
               key={request.id}
               secondaryAction={
-                <div className="flex gap-2">
-                  <IconButton
-                    edge="end"
-                    color="primary"
-                    onClick={() => acceptRequest(request.id)}
-                    disabled={isAccepting}
-                  >
-                    <Check />
-                  </IconButton>
-                  <IconButton
-                    edge="end"
-                    color="error"
-                    onClick={() => rejectRequest(request.id)}
-                    disabled={isRejecting}
-                  >
-                    <Close />
-                  </IconButton>
-                </div>
+                isOwnProfile && (
+                  <div className="flex gap-2">
+                    <IconButton
+                      edge="end"
+                      color="primary"
+                      onClick={() => acceptRequest(request.id)}
+                      disabled={isAccepting}
+                    >
+                      <Check />
+                    </IconButton>
+                    <IconButton
+                      edge="end"
+                      color="error"
+                      onClick={() => rejectRequest(request.id)}
+                      disabled={isRejecting}
+                    >
+                      <Close />
+                    </IconButton>
+                  </div>
+                )
               }
             >
               <ListItemAvatar>

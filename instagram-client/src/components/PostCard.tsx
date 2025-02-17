@@ -36,9 +36,15 @@ interface PostCardProps {
   refreshPost: () => void;
   updatePost: (post: Post) => void;
   onDelete: (postId: string) => void;
+  fromProfile?: boolean;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
+const PostCard: React.FC<PostCardProps> = ({
+  post,
+  updatePost,
+  onDelete,
+  fromProfile,
+}) => {
   const [liked, setLiked] = useState(post.isLiked || false);
   const navigate = useNavigate();
   const [likesCommentCount, setLikesCommentCount] = useState(post._count);
@@ -218,7 +224,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, updatePost, onDelete }) => {
             />
           }
           action={
-            post.owned && (
+            (post.owned || fromProfile) && (
               <IconButton
                 onClick={handleMenuClick}
                 sx={{

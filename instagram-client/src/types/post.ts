@@ -10,11 +10,11 @@ export interface Post {
     username: string;
     profileImage: string | null;
   };
-  _count: {
-    Likes: number;
-    comments: number;
+  _count?: {
+    Likes?: number;
+    comments?: number;
   };
-  comments: Comment[];
+  comments?: Comment[];
   isLiked: boolean;
 }
 

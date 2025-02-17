@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 import ApiService from "../../services/apiServices";
+import { useAlert } from "./AlertContext";
 
 interface User {
   id: string;
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -74,9 +76,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(accessToken);
         setUser(userData);
         setIsAuthenticated(true);
+        showAlert("Sign in successful", "success");
       }
     } catch (error) {
+      showAlert("Sign in failed, credentials are not valid", "error");
       console.error("Signin failed:", error);
+      throw error;
     }
   };
 
@@ -90,8 +95,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(accessToken);
         setUser(userData);
         setIsAuthenticated(true);
+        showAlert("Sign up successful", "success");
       }
     } catch (error) {
+      showAlert("Sign up failed, please try again", "error");
       console.error("Signup failed:", error);
       throw error;
     }

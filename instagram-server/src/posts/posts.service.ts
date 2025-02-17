@@ -220,6 +220,31 @@ export class PostsService {
     const posts = await this.prisma.post.findMany({
       where: {
         userId,
+        status: 'ACTIVE',
+      },
+      include: {
+        images: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profileImage: true,
+          },
+        },
+        Likes: {
+          where: {
+            userId: userId,
+          },
+          select: {
+            id: true,
+          },
+        },
+        _count: {
+          select: {
+            Likes: true,
+            comments: true,
+          },
+        },
       },
     });
     return posts;
